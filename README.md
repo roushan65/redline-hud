@@ -39,6 +39,8 @@ The desktop app keeps `config.json`, the uploaded logo and `vendors/` in the sys
 | macOS | `~/Library/Application Support/com.redline-hud.desktop` |
 | Linux | `~/.config/com.redline-hud.desktop` |
 
+Zoom works as in a browser: **Ctrl** (**⌘** on macOS) with **+**, **−** or **0**, or Ctrl + mouse wheel. The zoom level resets when the app restarts.
+
 It polls LibreHardwareMonitor itself, so plain `http://` endpoints on your LAN work and the `/lhm` proxy isn't needed. It doesn't serve the panel to other devices. For a tablet or a second PC, use the server app below.
 
 ### Server app
