@@ -99,7 +99,8 @@ small {
   background:
     repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px),
     radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.45));
-  mix-blend-mode: multiply;
+  /* no mix-blend-mode: multiplying by black looks identical to plain alpha, but a full-screen blend layer
+     has to be re-composited every frame anything beneath it moves (spinning fans), which heats up tablets */
 }
 
 /* ---------- header ---------- */
@@ -390,6 +391,50 @@ small {
 .dash__center { grid-area: center; }
 .dash__table { grid-area: table; min-width: 0; }
 
+/* memory is the last card in the centre column: its row takes the height left beside the CPU / GPU cards
+   and the usage chart grows into it (the 1fr row collapses to 0 wherever the column is content-sized) */
+.dash__center { grid-template-rows: auto 1fr; }
+.dash__center > :only-child { grid-row: 1 / -1; }
+
+.dash__center > .panel--mem {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash__center > .panel--mem > .panel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* size containment: the trend adds no height of its own, it only takes what is left over */
+.mem__trend {
+  flex: 1;
+  position: relative;
+  container: memtrend / size;
+  /* swallow the body's flex gap so an empty trend (no spare height) adds nothing; the block re-adds it inside */
+  margin-top: -14px;
+}
+
+.mem__trend > .block {
+  position: absolute;
+  inset: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mem__trend .chart--fill { flex: 1; }
+
+/* short on room: drop the label row and keep just the plot; below ~28px leave the space empty */
+@container memtrend (max-height: 64px) {
+  .mem__trend .block__head,
+  .mem__trend .chart__ymax { display: none; }
+}
+
+@container memtrend (max-height: 28px) {
+  .mem__trend > .block { display: none; }
+}
+
 /* hero panels stretch to the taller of the two so CPU and GPU line up */
 .dash__cpu,
 .dash__gpu {
@@ -401,8 +446,20 @@ small {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: var(--gap);
-  align-items: start;
+  align-items: stretch; /* cards in a row share one height; the shorter ones grow their charts / gauges into it */
   min-width: 0;
+}
+
+/* stretched minor cards: the body fills the card so its widgets can take the spare height */
+.dash__minor > .panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash__minor > .panel > .panel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .dash--stale {
@@ -480,6 +537,18 @@ small {
 .panel--minor .fan__rotor { width: 26px; height: 26px; }
 .panel--minor .fan__rpm { font-size: 14px; }
 
+/* network: the throughput chart takes whatever height the row gives the card */
+.panel--net .chart--fill { flex: 1; }
+
+/* mainboard: thermometers stretch, fans sit at the bottom and grow to fill the width */
+.panel--board .thermals { flex: 1; align-items: stretch; }
+.panel--board .thermo { justify-content: flex-end; }
+.panel--board .thermo__tube { flex: 1; height: auto; min-height: 56px; max-height: 200px; }
+.panel--board .fans { margin-top: auto; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr)); }
+.panel--board .fan { padding: 6px 8px; }
+.panel--board .fan__rotor { width: clamp(26px, 9cqi, 40px); height: clamp(26px, 9cqi, 40px); }
+.panel--board .fan__rpm { font-size: 16px; }
+
 /* ---------- brand / channel card ---------- */
 
 .brand {
@@ -496,34 +565,29 @@ small {
     radial-gradient(ellipse 70% 60% at 50% 35%, rgba(var(--c-accent-rgb), 0.12), transparent 70%),
     linear-gradient(180deg, rgba(var(--c-accent2-rgb), 0.05), transparent),
     var(--c-surface);
-  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  /* same frame as .panel: chamfered top-right / bottom-left, square corners for the brackets */
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
   animation: panel-in 0.5s ease-out both;
   container: brand / inline-size;
 }
 
-.brand::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border: 1px solid var(--c-line);
-  clip-path: inherit;
-}
-
 .brand::after {
-  /* sweeping scan beam behind the logo */
+  /* sweeping scan beam behind the logo; moved with transform (GPU) rather than background-position (repaint per frame) */
   content: '';
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 300%;
   pointer-events: none;
   background: linear-gradient(180deg, transparent 0 45%, rgba(var(--c-accent2-rgb), 0.08) 50%, transparent 55% 100%);
-  background-size: 100% 300%;
-  animation: brand-scan 6s linear infinite;
+  animation: brand-scan 3s linear infinite;
+  will-change: transform;
 }
 
 @keyframes brand-scan {
-  from { background-position: 0 100%; }
-  to { background-position: 0 -200%; }
+  from { transform: translateY(-66.667%); }
+  to { transform: translateY(33.333%); }
 }
 
 .brand__logo {
@@ -645,7 +709,8 @@ small {
 }
 
 /* hairline border drawn inside the clip (clip-path eats real borders on the chamfer) */
-.panel::before {
+.panel::before,
+.brand::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -886,6 +951,7 @@ small {
   }
   .dash__center {
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: auto;
     align-items: stretch;
   }
   .dash__center > :only-child { grid-column: 1 / -1; }
@@ -896,7 +962,7 @@ small {
       'minor minor'
       'table table';
   }
-  .dash--no-gpu .dash__center { grid-template-columns: minmax(0, 1fr); }
+  .dash--no-gpu .dash__center { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
 }
 
 /* tablets portrait & phones: one column, still in priority order */

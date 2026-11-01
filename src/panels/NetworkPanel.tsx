@@ -18,7 +18,7 @@ export function NetworkPanel({ nics, history, intervalMs }: { nics: NetworkView[
   const upf = formatRate(primary.up?.value ?? null);
 
   return (
-    <Panel title="Network" code="NET.01" subtitle={primary.hw.name} className="panel--minor">
+    <Panel title="Network" code="NET.01" subtitle={primary.hw.name} className="panel--minor panel--net">
       <div className="net__hero">
         <div className="net__big">
           <span className="net__label"><i style={{ background: 'var(--c-series1)' }} />Down</span>
@@ -39,6 +39,7 @@ export function NetworkPanel({ nics, history, intervalMs }: { nics: NetworkView[
         capacity={HISTORY_LEN}
         ariaLabel={`${primary.hw.name} download and upload throughput`}
         height={80}
+        fill
       />
       <div className="net__totals">
         <span>Σ ↓ {primary.downloaded?.value?.toFixed(1) ?? '—'} GB</span>

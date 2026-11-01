@@ -226,6 +226,12 @@
   overflow: visible;
 }
 
+/* fill mode: the box is sized by its parent (flex) and the svg follows it, never the other way round */
+.chart--fill svg {
+  position: absolute;
+  inset: 0;
+}
+
 .chart__grid {
   stroke: rgba(var(--c-line-rgb), 0.6);
   stroke-width: 1;
@@ -483,6 +489,7 @@
   height: 34px;
   flex-shrink: 0;
   animation: spin linear infinite;
+  will-change: transform; /* own compositor layer: spins without repainting the card */
 }
 
 .fan--off .fan__rotor {
@@ -868,16 +875,16 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(2px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s;
+  transition: opacity 0.25s, backdrop-filter 0.25s;
   z-index: 50;
 }
 
 .scrim--open {
   opacity: 1;
   pointer-events: auto;
+  backdrop-filter: blur(2px); /* only while open: an idle full-screen blur still costs GPU time on Safari */
 }
 
 .drawer {

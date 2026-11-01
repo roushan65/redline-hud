@@ -22,7 +22,7 @@ export function BoardPanel({ board }: { board: BoardView }) {
       subtitle={v?.model ?? board.hw.name}
       badge={<VendorBadge vendor={v?.vendor} hwName={board.hw.name} size="sm" />}
       right={<StatusTag level={worst} />}
-      className="panel--minor"
+      className="panel--minor panel--board"
     >
       <div className="thermals">
         {board.temps.map((t, i) => {

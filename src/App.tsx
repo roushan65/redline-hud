@@ -88,7 +88,7 @@ export default function App() {
             </div>
             <div className="dash__center">
               {settings.brand.show && <BrandPanel brand={settings.brand} machine={machine} />}
-              <MemoryPanel mem={views.mem} vendor={views.ramVendor} />
+              <MemoryPanel mem={views.mem} vendor={views.ramVendor} history={feed.history} intervalMs={settings.intervalMs} />
             </div>
             {views.gpus.length > 0 && (
               <div className="dash__gpu">
