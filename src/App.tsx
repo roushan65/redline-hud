@@ -3,6 +3,7 @@ import { BrandPanel } from './components/BrandPanel';
 import { Header } from './components/Header';
 import { SettingsDrawer } from './components/SettingsDrawer';
 import { useSensorFeed } from './hooks/useSensorFeed';
+import { isDesktop } from './lib/desktop';
 import { PrefsContext } from './lib/prefs';
 import { boardView, cpuView, gpuView, gpus, hardwareOfKind, memoryView, networkViews, storageViews } from './lib/selectors';
 import { dominantVendor } from './lib/vendors';
@@ -111,7 +112,7 @@ export default function App() {
           <span>SRC: {settings.source === 'mock' ? 'SIMULATOR' : settings.url}</span>
           <span>POLL {settings.intervalMs}ms</span>
           <span>{feed.lastUpdate ? `SYNC ${new Date(feed.lastUpdate).toLocaleTimeString([], { hour12: false })}` : 'SYNC —'}</span>
-          <span>CFG {status.target === 'disk' ? 'config/config.json' : status.target === 'browser' ? 'BROWSER' : '…'}</span>
+          <span>CFG {status.target === 'disk' ? (isDesktop ? 'APP DATA' : 'config/config.json') : status.target === 'browser' ? 'BROWSER' : '…'}</span>
         </footer>
 
         <SettingsDrawer

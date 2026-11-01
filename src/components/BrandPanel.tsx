@@ -1,10 +1,11 @@
+import { assetUrl } from '../lib/desktop';
 import type { Branding } from '../lib/settings';
 
 /** Only image-ish sources are rendered: uploaded file, same-origin path, http(s) or data:image. */
 export function safeLogoSrc(logo: string): string | null {
   const v = logo.trim();
   if (!v) return null;
-  if (v.startsWith('/') && !v.startsWith('//')) return v;
+  if (v.startsWith('/') && !v.startsWith('//')) return assetUrl(v);
   if (/^data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,/i.test(v)) return v;
   try {
     const u = new URL(v);

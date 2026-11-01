@@ -1,9 +1,11 @@
-name: Release executables
+name: Release builds
 
-# Publishing a GitHub release builds a standalone REDLINE//HUD executable for each OS / CPU.
-# Each build job attaches its archive to that release as soon as it passes its smoke test,
-# then SHA256SUMS.txt is added for whatever was built.
-# "Run workflow" builds the same archives as workflow artifacts; give it the tag of an
+# Publishing a GitHub release builds REDLINE//HUD for each OS / CPU in two forms:
+#   build   → a standalone server executable (Node single executable app), opened in a browser
+#   desktop → a Tauri desktop app (installer / .dmg / AppImage / .deb / .rpm)
+# Each job attaches its files to that release as soon as it passes, then SHA256SUMS.txt is added
+# for whatever was built.
+# "Run workflow" builds the same files as workflow artifacts; give it the tag of an
 # existing release to attach them there too (e.g. to redo one platform that failed).
 on:
   release:
@@ -97,11 +99,90 @@ jobs:
           gh release upload "$RELEASE_TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
           echo "attached ${files[*]} to $RELEASE_TAG"
 
+  desktop:
+    # Tauri app: the same UI in a native window, with config kept in the OS app-config folder.
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: windows-x64 }
+          - { os: macos-latest, target: macos-arm64 }
+          - { os: macos-15-intel, target: macos-x64 }
+          # 22.04 so the .deb / AppImage also run on older distros (glibc 2.35)
+          - { os: ubuntu-22.04, target: linux-x64 }
+          # linuxdeploy (AppImage) has no ARM build, so ARM gets .deb / .rpm only
+          - { os: ubuntu-22.04-arm, target: linux-arm64, bundles: 'deb,rpm' }
+    runs-on: ${{ matrix.os }}
+    name: desktop (${{ matrix.target }})
+    permissions:
+      contents: write # gh release upload
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev patchelf rpm
+      - run: npm install --no-audit --no-fund
+      - name: Version from tag
+        # v1.2.3 → 1.2.3 in package.json, which tauri.conf.json reads (MSI needs a plain x.y.z)
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        run: |
+          v="${RELEASE_TAG#v}"
+          if [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then npm pkg set version="$v"; else echo "::warning::$RELEASE_TAG is not vX.Y.Z, keeping package.json version"; fi
+      - run: npx tauri build ${{ matrix.bundles && format('--bundles {0}', matrix.bundles) || '' }}
+      - name: Rust unit tests
+        if: matrix.target == 'linux-x64'
+        run: cargo test --release --manifest-path src-tauri/Cargo.toml
+
+      - name: Collect installers
+        shell: bash
+        run: |
+          shopt -s nullglob
+          b=src-tauri/target/release/bundle
+          name=redline-hud-desktop-${{ matrix.target }}
+          mkdir -p desktop
+          for f in $b/nsis/*-setup.exe; do cp "$f" "desktop/$name-setup.exe"; done
+          for f in $b/msi/*.msi;        do cp "$f" "desktop/$name.msi"; done
+          for f in $b/dmg/*.dmg;        do cp "$f" "desktop/$name.dmg"; done
+          for f in $b/appimage/*.AppImage; do cp "$f" "desktop/$name.AppImage"; done
+          for f in $b/deb/*.deb;        do cp "$f" "desktop/$name.deb"; done
+          for f in $b/rpm/*.rpm;        do cp "$f" "desktop/$name.rpm"; done
+          ls -la desktop
+          test -n "$(ls desktop)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redline-hud-desktop-${{ matrix.target }}
+          path: desktop/*
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=(desktop/*)
+          gh release upload "$RELEASE_TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+          echo "attached ${files[*]} to $RELEASE_TAG"
+
   checksums:
-    # runs even if some platforms failed, so the archives that did attach still get checksums
+    # runs even if some platforms failed, so the files that did attach still get checksums
     # (job-level `if` can't read workflow `env`, hence the repeated tag expression)
-    if: always() && (github.event.release.tag_name || inputs.tag) != '' && contains(fromJSON('["success","failure"]'), needs.build.result)
-    needs: build
+    if: >-
+      always() && (github.event.release.tag_name || inputs.tag) != '' &&
+      (contains(fromJSON('["success","failure"]'), needs.build.result) || contains(fromJSON('["success","failure"]'), needs.desktop.result))
+    needs: [build, desktop]
     runs-on: ubuntu-latest
     permissions:
       contents: write

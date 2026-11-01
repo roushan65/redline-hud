@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useConfigFolder } from '../lib/desktop';
 import { deleteLogo, uploadLogo, type Branding, type LogoShape, type SaveStatus, type Settings } from '../lib/settings';
 import { THEMES, resolveTheme, type Theme } from '../lib/themes';
 import { safeLogoSrc } from './BrandPanel';
@@ -31,7 +32,9 @@ const SHAPES: { id: LogoShape; label: string }[] = [
 ];
 
 function SaveBadge({ status }: { status: SaveStatus }) {
-  const where = status.target === 'disk' ? 'config/config.json' : status.target === 'browser' ? 'browser storage (no config server)' : 'checking…';
+  const folder = useConfigFolder();
+  const where =
+    status.target === 'disk' ? `${folder}/config.json` : status.target === 'browser' ? 'browser storage (no config server)' : 'checking…';
   const what =
     status.state === 'saving' ? 'Saving…' : status.state === 'error' ? `Save failed: ${status.error}` : status.target === 'loading' ? '' : 'Saved';
   return (
@@ -115,7 +118,7 @@ function BrandingSection({ brand, onBrand }: { brand: Branding; onBrand: (p: Par
           <button type="submit" className="btn btn--ghost">Use</button>
         </form>
         {err && <p className="hint hint--err">{err}</p>}
-        <p className="hint">PNG, JPG, WebP, GIF or SVG up to 5 MB. Uploads are saved to <code>config/logo.*</code>.</p>
+        <p className="hint">PNG, JPG, WebP, GIF or SVG up to 5 MB. Uploads are saved next to <code>config.json</code>.</p>
       </div>
       <div className="field">
         <label>Logo frame</label>

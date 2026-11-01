@@ -7,6 +7,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "build:standalone": "node scripts/build-standalone.mjs",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -20,6 +23,7 @@
     "simple-icons": "^16.36.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.9.0",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

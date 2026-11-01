@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { nextMockFrame } from '../mock/mockSource';
+import { invoke, isDesktop } from '../lib/desktop';
 import { parseLhm } from '../lib/parse';
 import type { LhmNode, Snapshot } from '../lib/types';
 import type { DataSource } from '../lib/settings';
@@ -26,6 +27,13 @@ interface Options {
 }
 
 async function fetchLhm(url: string, signal: AbortSignal): Promise<LhmNode> {
+  if (isDesktop) {
+    // polled from Rust; a command can't be cancelled, so stop waiting for it instead
+    const aborted = new Promise<never>((_, reject) =>
+      signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true }),
+    );
+    return Promise.race([invoke<LhmNode>('lhm_fetch', { url: new URL(url, location.href).href }), aborted]);
+  }
   const res = await fetch(url, { signal, cache: 'no-store' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as LhmNode;

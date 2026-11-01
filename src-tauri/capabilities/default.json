@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Main panel window. The app's own commands (config, vendor logos, LHM polling) are allowed by default.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { assetUrl, invoke, isDesktop } from './desktop';
 import type { VendorLogoMode } from './prefs';
 import { DEFAULT_THEME_ID, type ColorOverrides } from './themes';
 
@@ -120,6 +121,10 @@ function urlOverrides(): Partial<Settings> {
 }
 
 async function fetchDisk(): Promise<{ found: true; settings: Settings } | { found: false; api: boolean }> {
+  if (isDesktop) {
+    const raw = await invoke<unknown>('config_get');
+    return raw == null ? { found: false, api: true } : { found: true, settings: normaliseSettings(raw) };
+  }
   const res = await fetch(CONFIG_API, { cache: 'no-store' });
   if (res.status === 404 && res.headers.get('content-type')?.includes('json')) return { found: false, api: true };
   if (!res.ok || !res.headers.get('content-type')?.includes('json')) return { found: false, api: false };
@@ -127,6 +132,7 @@ async function fetchDisk(): Promise<{ found: true; settings: Settings } | { foun
 }
 
 async function saveDisk(s: Settings) {
+  if (isDesktop) return invoke<void>('config_put', { config: s });
   const res = await fetch(CONFIG_API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
   if (!res.ok) throw new Error(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? `HTTP ${res.status}`);
 }
@@ -214,8 +220,21 @@ export function useSettings() {
   return { settings, update, updateBrand, reset, status };
 }
 
+const readDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error('Could not read file'));
+    r.readAsDataURL(file);
+  });
+
 /** Upload a logo to config/logo.* on disk. Falls back to an inline data: URL when there is no server. */
 export async function uploadLogo(file: File): Promise<string> {
+  if (isDesktop) {
+    if (file.size > 5 * 1024 * 1024) throw new Error('Logo is larger than 5 MB');
+    await invoke('logo_put', { dataUrl: await readDataUrl(file) });
+    return `${LOGO_API}?v=${Date.now()}`;
+  }
   try {
     const res = await fetch(LOGO_API, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
     const ct = res.headers.get('content-type') ?? '';
@@ -225,16 +244,18 @@ export async function uploadLogo(file: File): Promise<string> {
     if (e instanceof Error && !(e instanceof TypeError)) throw e; // real server error, not "no server"
   }
   if (file.size > 256 * 1024) throw new Error('No config server running — logos over 256 KB need `npm run dev` / `npm run preview`.');
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(new Error('Could not read file'));
-    r.readAsDataURL(file);
-  });
+  return readDataUrl(file);
 }
 
 export async function deleteLogo() {
+  if (isDesktop) return invoke<void>('logo_delete').catch(() => undefined);
   await fetch(LOGO_API, { method: 'DELETE' }).catch(() => undefined);
+}
+
+async function fetchVendorFiles(): Promise<unknown> {
+  if (isDesktop) return invoke('vendor_files');
+  const r = await fetch('/api/vendors', { cache: 'no-store' });
+  return r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : {};
 }
 
 /** Manufacturer logos the user dropped into config/vendors/ (empty when there is no config server). */
@@ -242,12 +263,12 @@ export function useVendorFiles(): Record<string, string> {
   const [files, setFiles] = useState<Record<string, string>>({});
   useEffect(() => {
     let alive = true;
-    fetch('/api/vendors', { cache: 'no-store' })
-      .then((r) => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : {}))
+    fetchVendorFiles()
       .then((m: unknown) => {
         if (!alive || !m || typeof m !== 'object') return;
         // only same-origin /api/vendors/ paths are accepted
-        setFiles(Object.fromEntries(Object.entries(m).filter(([, v]) => typeof v === 'string' && v.startsWith('/api/vendors/'))));
+        const ok = Object.entries(m).filter((e): e is [string, string] => typeof e[1] === 'string' && e[1].startsWith('/api/vendors/'));
+        setFiles(Object.fromEntries(ok.map(([id, src]) => [id, assetUrl(src)])));
       })
       .catch(() => undefined);
     return () => {

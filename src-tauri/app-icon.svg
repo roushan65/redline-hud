@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none" stroke-linecap="round">
+  <!-- source for src-tauri/icons/* (regenerate with `npx tauri icon src-tauri/app-icon.svg`); same tachometer as public/favicon.svg -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="#0a0a12"/>
+  <rect x="64" y="64" width="896" height="896" rx="200" stroke="#fcee0a" stroke-opacity=".18" stroke-width="12"/>
+  <g transform="translate(112 112) scale(25)">
+    <path d="M6.1 25.9 A13 13 0 0 1 20.5 4.8" stroke="#fcee0a" stroke-width="2.5"/>
+    <path d="M23.5 6.4 A13 13 0 0 1 25.9 25.9" stroke="#ff2a4d" stroke-width="3.5"/>
+    <path d="M16 19 L24 11" stroke="#f2f0e6" stroke-width="2.5"/>
+    <circle cx="16" cy="19" r="2.5" fill="#fcee0a"/>
+  </g>
+</svg>

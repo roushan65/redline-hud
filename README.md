@@ -17,7 +17,33 @@ A futuristic, themeable hardware-telemetry panel for [LibreHardwareMonitor](http
 
 ## Download
 
-You don't need Node.js to run the panel. Each [GitHub release](../../releases/latest) includes a single-file app for every platform:
+You don't need Node.js to run the panel. Each [GitHub release](../../releases/latest) comes in two forms for every platform.
+
+### Desktop app
+
+The panel in its own window. It's built with [Tauri](https://tauri.app), so it uses the system webview and the download is only a few MB.
+
+| Platform | File |
+|---|---|
+| Windows (x64) | `redline-hud-desktop-windows-x64-setup.exe` or `.msi` |
+| macOS (Apple silicon) | `redline-hud-desktop-macos-arm64.dmg` |
+| macOS (Intel) | `redline-hud-desktop-macos-x64.dmg` |
+| Linux (x64) | `redline-hud-desktop-linux-x64.AppImage`, `.deb` or `.rpm` |
+| Linux (ARM64) | `redline-hud-desktop-linux-arm64.deb` or `.rpm` |
+
+The desktop app keeps `config.json`, the uploaded logo and `vendors/` in the system's app-config folder. Settings shows the exact path:
+
+| OS | Folder |
+|---|---|
+| Windows | `%APPDATA%\com.redline-hud.desktop` |
+| macOS | `~/Library/Application Support/com.redline-hud.desktop` |
+| Linux | `~/.config/com.redline-hud.desktop` |
+
+It polls LibreHardwareMonitor itself, so plain `http://` endpoints on your LAN work and the `/lhm` proxy isn't needed. It doesn't serve the panel to other devices. For a tablet or a second PC, use the server app below.
+
+### Server app
+
+A single-file server that you open in any browser, on this machine or across your LAN:
 
 | Platform | File |
 |---|---|
@@ -29,11 +55,15 @@ You don't need Node.js to run the panel. Each [GitHub release](../../releases/la
 
 Unzip the file, run `redline-hud-…`, then open `http://localhost:2077`. The app keeps `config/` (settings, uploaded logo and `vendors/`) in the same folder as the executable. To change the port or bind address, copy `.env.example` to `.env` next to the executable and edit it. `PANEL_HOST`, `PANEL_PORT`, `PANEL_CONFIG_DIR` and `LHM_PROXY_TARGET` are read when the app starts. The `VITE_*` defaults are fixed into the build, so change those in Settings instead.
 
-- **Windows:** SmartScreen may warn about an unrecognised app. Choose *More info → Run anyway*. Windows Firewall will ask whether to allow LAN access.
-- **macOS:** the app isn't notarised, so the first time, right-click it and choose *Open*, or run `xattr -d com.apple.quarantine redline-hud-macos-*`.
-- **Linux:** run `chmod +x redline-hud-linux-*` if your extractor dropped the executable bit.
+### First run
 
-`SHA256SUMS.txt` on each release lists the checksum of every archive.
+Neither app is signed with a paid certificate, so the OS will ask you to confirm the first time:
+
+- **Windows:** SmartScreen may warn about an unrecognised app. Choose *More info → Run anyway*. For the server app, Windows Firewall will ask whether to allow LAN access.
+- **macOS:** right-click the app and choose *Open*, or remove the quarantine flag: `xattr -dr com.apple.quarantine "/Applications/REDLINE HUD.app"` for the desktop app, or `xattr -d com.apple.quarantine redline-hud-macos-*` for the server app.
+- **Linux:** run `chmod +x redline-hud-*` if your extractor or browser dropped the executable bit. The desktop app needs WebKitGTK 4.1, which the `.deb` / `.rpm` pull in.
+
+`SHA256SUMS.txt` on each release lists the checksum of every file.
 
 ## Quick start (from source)
 
@@ -151,10 +181,14 @@ server/
   configApi.ts       Vite plugin: /api/config, /api/logo, /api/vendors (dev + preview servers)
   listen.ts          PANEL_HOST / PANEL_PORT → server bind address
   standalone.ts      server for the release executables (UI + config API + /lhm proxy)
+src-tauri/
+  src/main.rs        desktop app: config / logo / vendor commands, LHM polling, hud: protocol
+  tauri.conf.json    window, CSP and installer settings
+  app-icon.svg       source for icons/
 scripts/
   build-standalone.mjs   packs the server and UI into a Node single executable
 .github/workflows/
-  release.yml        builds and attaches executables when a release is published
+  release.yml        builds and attaches the server and desktop apps when a release is published
 config/              (created at runtime) config.json + logo
 ```
 
@@ -165,6 +199,8 @@ npm run dev         # dev server on PANEL_HOST:PANEL_PORT (default 0.0.0.0:2077)
 npm run build       # production build → dist/
 npm run preview     # serve dist/ (with the config API)
 npm run build:standalone   # single executable for this OS → release/
+npm run desktop:dev        # desktop app window with hot reload (needs Rust)
+npm run desktop:build      # desktop installers for this OS → src-tauri/target/release/bundle/
 npm run typecheck
 npm test            # unit tests (parser, settings, vendors, config API)
 LHM_LIVE_URL=http://192.168.1.4:8085/data.json npm test   # + live endpoint check
@@ -175,10 +211,12 @@ LHM_LIVE_URL=http://192.168.1.4:8085/data.json npm test   # + live endpoint chec
 Publish a release on GitHub (*Releases → Draft a new release*, with a tag such as `v1.1.0`). The [release workflow](.github/workflows/release.yml) then:
 
 1. runs the type-check and tests;
-2. builds the executable on Windows, macOS (Apple silicon and Intel) and Linux (x64 and ARM64);
-3. starts each executable and checks that it serves the UI and saves config;
-4. attaches each platform's archive to the release as soon as that platform passes, then adds `SHA256SUMS.txt`.
+2. builds the server app on Windows, macOS (Apple silicon and Intel) and Linux (x64 and ARM64), starts each one, and checks that it serves the UI and saves config;
+3. builds the desktop app on the same platforms. The version is taken from the tag, so `v1.1.0` becomes 1.1.0;
+4. attaches each platform's files to the release as soon as that platform passes, then adds `SHA256SUMS.txt`.
 
-If one platform fails, the others are still attached. To try the builds without publishing anything, go to *Actions → Release executables → Run workflow* and leave **tag** empty: the archives appear as workflow artifacts only. To rebuild for a release that already exists, for example after fixing a failed platform, enter its tag (such as `v1.1.0`). The new archives replace the old ones on that release.
+If one platform fails, the others are still attached. To try the builds without publishing anything, go to *Actions → Release builds → Run workflow* and leave **tag** empty: the files appear as workflow artifacts only. To rebuild for a release that already exists, for example after fixing a failed platform, enter its tag (such as `v1.1.0`). The new files replace the old ones on that release.
 
-Each executable is a [Node.js single executable application](https://nodejs.org/api/single-executable-applications.html): the Node 24 runtime, the bundled server and the built UI in one file. Most of its size, around 100 MB, is the Node runtime. To build one for your own machine, run `npm run build:standalone`.
+The server app is a [Node.js single executable application](https://nodejs.org/api/single-executable-applications.html): the Node 24 runtime, the bundled server and the built UI in one file. Most of its size, around 100 MB, is the Node runtime. To build one for your own machine, run `npm run build:standalone`.
+
+The desktop app needs [Rust](https://rustup.rs) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS. On Linux that means WebKitGTK 4.1. Then run `npm run desktop:build`. The macOS build gets an ad-hoc signature, which is enough to run it on Apple silicon but not to pass Gatekeeper without the right-click *Open* step. The icons in `src-tauri/icons/` come from `src-tauri/app-icon.svg`; after editing it, run `npx tauri icon src-tauri/app-icon.svg`.
