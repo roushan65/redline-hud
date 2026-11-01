@@ -33,8 +33,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci
+      # no package-lock.json in the repo, so resolve from package.json (npm ci needs a lock file)
+      - run: npm install --no-audit --no-fund
       - run: npm run typecheck
       - run: npm test
 
@@ -59,8 +59,7 @@ jobs:
         with:
           # the executable embeds this Node runtime; sea.getAssetKeys() needs 24.8+
           node-version: 24
-          cache: npm
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: npm run build:standalone
 
       - name: Smoke test
