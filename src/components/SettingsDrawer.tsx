@@ -31,6 +31,17 @@ const SHAPES: { id: LogoShape; label: string }[] = [
   { id: 'square', label: 'Square' },
 ];
 
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(() => matchMedia('(prefers-reduced-motion: reduce)').matches);
+  useEffect(() => {
+    const mq = matchMedia('(prefers-reduced-motion: reduce)');
+    const on = () => setReduced(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return reduced;
+}
+
 function SaveBadge({ status }: { status: SaveStatus }) {
   const folder = useConfigFolder();
   const where =
@@ -146,6 +157,7 @@ export function SettingsDrawer({ open, settings, status, onChange, onBrand, onRe
   }, [open, onClose]);
 
   const theme = resolveTheme(settings.themeId, settings.overrides);
+  const systemReduced = useReducedMotion();
 
   return (
     <>
@@ -282,6 +294,30 @@ export function SettingsDrawer({ open, settings, status, onChange, onBrand, onRe
             <input type="checkbox" checked={settings.glitch} onChange={(e) => onChange({ glitch: e.target.checked })} />
             Glitch effects
           </label>
+          <div className="field">
+            <label>Animations</label>
+            <div className="seg">
+              {(
+                [
+                  ['system', 'Follow system'],
+                  ['on', 'On'],
+                  ['off', 'Off'],
+                ] as const
+              ).map(([m, label]) => (
+                <button key={m} type="button" className={settings.motion === m ? 'seg__btn seg__btn--on' : 'seg__btn'} onClick={() => onChange({ motion: m })}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="hint">
+              Spinning fans, glitch, pulses and panel intros.
+              {systemReduced &&
+                (settings.motion === 'system'
+                  ? ' Your system asks apps to reduce motion, so they are paused. Choose On to play them anyway.'
+                  : ' Your system asks apps to reduce motion.')}{' '}
+              On Windows that comes from <em>Settings → Accessibility → Visual effects → Animation effects</em>.
+            </p>
+          </div>
         </section>
 
         <footer className="drawer__foot">

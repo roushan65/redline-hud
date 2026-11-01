@@ -26,6 +26,13 @@ describe('normaliseSettings', () => {
     expect(s.brand).toEqual({ ...DEFAULT_BRANDING, title: 'NEON RIGS', show: false });
   });
 
+  it('defaults animations to follow the system and accepts on/off', () => {
+    expect(normaliseSettings({}).motion).toBe('system');
+    expect(normaliseSettings({ motion: 'on' }).motion).toBe('on');
+    expect(normaliseSettings({ motion: 'off' }).motion).toBe('off');
+    expect(normaliseSettings({ motion: true }).motion).toBe('system');
+  });
+
   it('caps branding text length', () => {
     const s = normaliseSettings({ brand: { title: 'x'.repeat(500), subtitle: 'y'.repeat(500) } });
     expect(s.brand.title).toHaveLength(80);

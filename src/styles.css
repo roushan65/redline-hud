@@ -990,6 +990,22 @@ small {
   .seg__btn { padding: 10px 8px; }
 }
 
+/* Settings → Animations. "Follow system" honours the OS reduce-motion setting, which Windows turns on
+   whenever Accessibility → Visual effects → Animation effects is off (also over Remote Desktop). */
+.motion-off,
+.motion-off *,
+.motion-off *::before,
+.motion-off *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .motion-system,
+  .motion-system *,
+  .motion-system *::before,
+  .motion-system *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

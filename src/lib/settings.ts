@@ -5,6 +5,8 @@ import { DEFAULT_THEME_ID, type ColorOverrides } from './themes';
 
 export type DataSource = 'live' | 'mock';
 export type LogoShape = 'hex' | 'circle' | 'square';
+/** 'system' follows the OS reduce-motion setting (Windows: Accessibility → Visual effects → Animation effects). */
+export type MotionMode = 'system' | 'on' | 'off';
 
 /** Centre "streamer" block: channel name, tagline and logo. */
 export interface Branding {
@@ -24,6 +26,8 @@ export interface Settings {
   overrides: ColorOverrides;
   scanlines: boolean;
   glitch: boolean;
+  /** Fan spin, glitch, pulses and panel intros. */
+  motion: MotionMode;
   tempUnit: 'C' | 'F';
   /** Fall back to the simulator when the live endpoint is unreachable. */
   autoFallback: boolean;
@@ -58,6 +62,7 @@ export const DEFAULT_SETTINGS: Settings = {
   overrides: {},
   scanlines: true,
   glitch: true,
+  motion: 'system',
   tempUnit: 'C',
   autoFallback: true,
   vendorLogos: 'brand',
@@ -86,6 +91,7 @@ export function normaliseSettings(raw: unknown): Settings {
     overrides,
     scanlines: bool(r.scanlines, d.scanlines),
     glitch: bool(r.glitch, d.glitch),
+    motion: oneOf(r.motion, ['system', 'on', 'off'] as const, d.motion),
     tempUnit: oneOf(r.tempUnit, ['C', 'F'] as const, d.tempUnit),
     autoFallback: bool(r.autoFallback, d.autoFallback),
     vendorLogos: oneOf(r.vendorLogos, ['brand', 'theme', 'off'] as const, d.vendorLogos),

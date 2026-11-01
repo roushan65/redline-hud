@@ -44,7 +44,7 @@ export default function App() {
     () => ({ tempUnit: settings.tempUnit, vendorLogos: settings.vendorLogos, vendorFiles }),
     [settings.tempUnit, settings.vendorLogos, vendorFiles],
   );
-  const fx = `${settings.scanlines ? ' fx-scan' : ''}${settings.glitch ? ' fx-glitch' : ''}`;
+  const fx = `${settings.scanlines ? ' fx-scan' : ''}${settings.glitch ? ' fx-glitch' : ''} motion-${settings.motion}`;
   const machine = snap?.machine ?? '— — —';
 
   return (

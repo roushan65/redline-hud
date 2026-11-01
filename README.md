@@ -109,6 +109,8 @@ The config API can change settings and upload a logo, and with the default `0.0.
 
 When the link drops twice in a row, the panel falls back to the simulator and shows a banner. You can turn this off in Settings.
 
+**Animations** (spinning fans, glitch, pulses) follow the OS *reduce motion* setting by default. Windows asks for reduced motion whenever *Settings → Accessibility → Visual effects → Animation effects* is off, and often over Remote Desktop or in a VM, so the panel can look frozen there while it animates on other devices. Turn that Windows setting on, or choose **⚙ Settings → Display → Animations → On** to animate regardless.
+
 ## Layout
 
 The layout follows a gamer's priorities:
