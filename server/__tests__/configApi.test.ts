@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -80,6 +80,24 @@ describe('config API', () => {
 
     expect((await fetch(`${base}/api/logo`, { method: 'DELETE' })).status).toBe(204);
     expect((await fetch(`${base}/api/logo`)).status).toBe(404);
+  });
+
+  it('lists and serves manufacturer logos from vendors/, read-only', async () => {
+    expect(await (await fetch(`${base}/api/vendors`)).json()).toEqual({});
+    await mkdir(path.join(dir, 'vendors'));
+    await writeFile(path.join(dir, 'vendors', 'amd.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+    await writeFile(path.join(dir, 'vendors', 'notes.txt'), 'ignored');
+    await writeFile(path.join(dir, 'secret.svg'), '<svg/>');
+
+    expect(await (await fetch(`${base}/api/vendors`)).json()).toEqual({ amd: '/api/vendors/amd.svg' });
+    const get = await fetch(`${base}/api/vendors/amd.svg`);
+    expect(get.headers.get('content-type')).toBe('image/svg+xml');
+    expect(get.headers.get('content-security-policy')).toContain('sandbox');
+
+    expect((await fetch(`${base}/api/vendors/notes.txt`)).status).toBe(404);
+    expect((await fetch(`${base}/api/vendors/..%2Fsecret.svg`)).status).toBe(404);
+    expect((await fetch(`${base}/api/vendors/%E0%A4%A`)).status).toBe(404);
+    expect((await fetch(`${base}/api/vendors/amd.svg`, { method: 'PUT', body: 'x' })).status).toBe(405);
   });
 
   it('rejects non-image uploads', async () => {

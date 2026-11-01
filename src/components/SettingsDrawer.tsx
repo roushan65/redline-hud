@@ -252,6 +252,25 @@ export function SettingsDrawer({ open, settings, status, onChange, onBrand, onRe
               ))}
             </div>
           </div>
+          <div className="field">
+            <label>Manufacturer logos</label>
+            <div className="seg">
+              {(
+                [
+                  ['brand', 'Brand colour'],
+                  ['theme', 'Theme tint'],
+                  ['off', 'Off'],
+                ] as const
+              ).map(([m, label]) => (
+                <button key={m} type="button" className={settings.vendorLogos === m ? 'seg__btn seg__btn--on' : 'seg__btn'} onClick={() => onChange({ vendorLogos: m })}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="hint">
+              Detected from the hardware names. Drop official logos into <code>config/vendors/</code> (e.g. <code>amd.svg</code>, <code>nvidia.png</code>) to replace the wordmarks.
+            </p>
+          </div>
           <label className="check">
             <input type="checkbox" checked={settings.scanlines} onChange={(e) => onChange({ scanlines: e.target.checked })} />
             CRT scanlines

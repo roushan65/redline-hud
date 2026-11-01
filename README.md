@@ -50,6 +50,26 @@ Below about 1240px wide, CPU and GPU sit side by side with the channel card and 
 
 Open **⚙ Settings → Branding** to set your channel name and tagline. You can also upload a logo (PNG, JPG, WebP, GIF or SVG, up to 5 MB) or paste an image URL, and choose a hex, circle or square frame. Untick **Show channel card** to hide the card.
 
+### Manufacturer logos
+
+The CPU, GPU, Mainboard and Memory cards, and each drive, show a badge for the manufacturer. The vendor is detected from the hardware name and ID that LHM reports. Model-number prefixes count too: `ST5000LM000` is detected as Seagate and `CT1000P3` as Crucial. The CPU and GPU cards also show the product line (RYZEN, GEFORCE, CORE ULTRA, …) as large outline text behind the gauges.
+
+The rules are in [src/lib/vendors.ts](src/lib/vendors.ts). They cover:
+
+- **CPU / GPU:** AMD, Intel and NVIDIA.
+- **Boards:** the main board makers (ASUS, MSI, Gigabyte, ASRock, …).
+- **Drives and RAM:** around 20 brands.
+
+Hardware that isn't recognised gets no badge.
+
+Each badge uses the first of these that is available:
+
+1. **Your own file.** Put an image named after the vendor ID in `config/vendors/`, for example `gigabyte.svg`, `wd.png` or `kingston.webp`. It is picked up on the next page load.
+2. **The official logo from [Simple Icons](https://simpleicons.org).** Covered: AMD, Intel, NVIDIA, Qualcomm, Apple, ASUS, ROG, MSI, NZXT, Supermicro, Dell, Alienware, HP, Lenovo, Acer, Samsung, Seagate, Corsair, HyperX, Toshiba and Hitachi. ROG, Alienware and HyperX are chosen when the hardware name mentions them. Symbol-only logos, such as the NVIDIA eye or the Corsair sails, get the brand name set beside them. The mapping is in [src/lib/brandIcons.ts](src/lib/brandIcons.ts).
+3. **A wordmark** in the brand's colour, for vendors Simple Icons doesn't have (Gigabyte, ASRock, WD, Crucial, Kingston, G.Skill, SK hynix, …).
+
+Brand colours that are too dark to read on the panel (for example black ASUS or Corsair, navy Samsung) are drawn in the theme's text colour instead. The Simple Icons data is CC0, but the logos are still their owners' trademarks; they are shown only to identify your own hardware. Only the icons listed above end up in the bundle. Under **⚙ Settings → Display → Manufacturer logos** you can choose *Brand colour*, *Theme tint* (single colour, matches the theme) or *Off*.
+
 ## Saved config
 
 `npm run dev` and `npm run preview` both serve a small API that stores settings on disk:
@@ -58,6 +78,7 @@ Open **⚙ Settings → Branding** to set your channel name and tagline. You can
 |---|---|
 | `config/config.json` | All settings: source, endpoint, interval, theme and colour overrides, effects, units, branding |
 | `config/logo.<ext>` | The uploaded logo (served at `/api/logo`) |
+| `config/vendors/<id>.<ext>` | Optional manufacturer logos you add yourself (served read-only at `/api/vendors/…`) |
 
 - **Hand edits:** you can edit `config.json` by hand and reload the page. Values that are unknown or invalid fall back to their defaults.
 - **Status:** the Settings drawer shows where the last save went.
@@ -82,13 +103,15 @@ src/
     selectors.ts    vendor-agnostic pickers: cpuView, gpuView, memoryView, …
     themes.ts       theme tokens + applyTheme()
     settings.ts     settings hook: config.json via /api/config, localStorage fallback
+    vendors.ts      manufacturer detection (name / model-number rules, product lines)
+    brandIcons.ts   Simple Icons logo per vendor, sub-brands (ROG, Alienware, HyperX)
     prefs.ts        °C/°F context, severity thresholds
   hooks/useSensorFeed.ts   polling, timeouts, history ring buffer, fallback
   mock/              sample.json (real LHM capture) + drifting simulator
   components/        RadialGauge, LineChart, Meter, CoreGrid, FanDial, Panel, …
   panels/            CPU, GPU, Memory, Network, Mainboard, Storage, Sensor index
 server/
-  configApi.ts       Vite plugin: /api/config + /api/logo (dev + preview servers)
+  configApi.ts       Vite plugin: /api/config, /api/logo, /api/vendors (dev + preview servers)
 config/              (created at runtime) config.json + logo
 ```
 
@@ -99,6 +122,6 @@ npm run dev         # dev server (exposed on LAN via host: true)
 npm run build       # production build → dist/
 npm run preview     # serve dist/ (with the config API)
 npm run typecheck
-npm test            # unit tests (parser, settings, config API)
+npm test            # unit tests (parser, settings, vendors, config API)
 LHM_LIVE_URL=http://192.168.1.4:8085/data.json npm test   # + live endpoint check
 ```

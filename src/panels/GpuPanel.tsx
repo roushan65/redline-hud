@@ -5,10 +5,12 @@ import { Panel } from '../components/Panel';
 import { RadialGauge } from '../components/RadialGauge';
 import { Stat } from '../components/Stat';
 import { StatusTag } from '../components/StatusTag';
+import { VendorBadge, VendorWatermark } from '../components/VendorBadge';
 import { HISTORY_LEN } from '../hooks/useSensorFeed';
 import { formatRate } from '../lib/format';
 import { LOAD_LIMITS, TEMP_LIMITS, severity, useDisplay, type Severity } from '../lib/prefs';
 import type { GpuView } from '../lib/selectors';
+import { detectVendor } from '../lib/vendors';
 
 const worst = (...l: Severity[]): Severity => (l.includes('crit') ? 'crit' : l.includes('warn') ? 'warn' : 'ok');
 
@@ -17,6 +19,7 @@ export function GpuPanel({ gpu, history, intervalMs }: { gpu: GpuView; history: 
   const tempLvl = severity(gpu.temp?.value, TEMP_LIMITS.gpu);
   const memTLvl = severity(gpu.memTemp?.value, TEMP_LIMITS.vram);
   const loadLvl = severity(gpu.load?.value, LOAD_LIMITS);
+  const v = detectVendor(gpu.hw);
 
   const used = gpu.memUsed?.value ?? null;
   const total = gpu.memTotal?.value ?? null;
@@ -31,7 +34,15 @@ export function GpuPanel({ gpu, history, intervalMs }: { gpu: GpuView; history: 
   };
 
   return (
-    <Panel title="GPU" code="SYS.02" subtitle={gpu.hw.name} right={<StatusTag level={worst(tempLvl, memTLvl, loadLvl)} />} className="panel--gpu panel--hero">
+    <Panel
+      title="GPU"
+      code="SYS.02"
+      subtitle={v?.model ?? gpu.hw.name}
+      badge={<VendorBadge vendor={v?.vendor} hwName={gpu.hw.name} />}
+      watermark={<VendorWatermark vendor={v?.vendor} text={v?.line} />}
+      right={<StatusTag level={worst(tempLvl, memTLvl, loadLvl)} />}
+      className="panel--gpu panel--hero"
+    >
       <div className="duo">
         <RadialGauge label="Core load" value={gpu.load?.value ?? null} peak={gpu.load?.max} display={d(gpu.load)} level={loadLvl} sub={`peak ${d(gpu.load, 'max').value}%`} />
         <RadialGauge

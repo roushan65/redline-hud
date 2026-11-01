@@ -4,9 +4,11 @@ import { Panel } from '../components/Panel';
 import { RadialGauge } from '../components/RadialGauge';
 import { Stat } from '../components/Stat';
 import { StatusTag } from '../components/StatusTag';
+import { VendorBadge, VendorWatermark } from '../components/VendorBadge';
 import { HISTORY_LEN } from '../hooks/useSensorFeed';
 import { LOAD_LIMITS, TEMP_LIMITS, severity, useDisplay, type Severity } from '../lib/prefs';
 import type { CpuView } from '../lib/selectors';
+import { detectVendor } from '../lib/vendors';
 
 const worst = (...l: Severity[]): Severity => (l.includes('crit') ? 'crit' : l.includes('warn') ? 'warn' : 'ok');
 
@@ -15,9 +17,18 @@ export function CpuPanel({ cpu, history, intervalMs }: { cpu: CpuView; history: 
   const tempLvl = severity(cpu.temp?.value, TEMP_LIMITS.cpu);
   const loadLvl = severity(cpu.load?.value, LOAD_LIMITS);
   const loadHist = cpu.load ? history.get(cpu.load.id) ?? [] : [];
+  const v = detectVendor(cpu.hw);
 
   return (
-    <Panel title="CPU" code="SYS.01" subtitle={cpu.hw.name} right={<StatusTag level={worst(tempLvl, loadLvl)} />} className="panel--cpu panel--hero">
+    <Panel
+      title="CPU"
+      code="SYS.01"
+      subtitle={v?.model ?? cpu.hw.name}
+      badge={<VendorBadge vendor={v?.vendor} hwName={cpu.hw.name} />}
+      watermark={<VendorWatermark vendor={v?.vendor} text={v?.line} />}
+      right={<StatusTag level={worst(tempLvl, loadLvl)} />}
+      className="panel--cpu panel--hero"
+    >
       <div className="duo">
         <RadialGauge label="Load" value={cpu.load?.value ?? null} peak={cpu.load?.max} display={d(cpu.load)} level={loadLvl} sub={`peak ${d(cpu.load, 'max').value}%`} />
         <RadialGauge

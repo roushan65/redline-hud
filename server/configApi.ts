@@ -11,6 +11,8 @@ import type { Plugin } from 'vite';
  *   GET  /api/logo     → uploaded logo image
  *   PUT  /api/logo     ← raw image bytes (Content-Type: image/*)
  *   DELETE /api/logo
+ *   GET  /api/vendors          → { amd: '/api/vendors/amd.svg', … } for files in <dir>/vendors/
+ *   GET  /api/vendors/<file>   → one of those manufacturer logos (read-only; drop files in by hand)
  *
  * Files live in PANEL_CONFIG_DIR (default ./config).
  */
@@ -89,6 +91,31 @@ async function removeLogos(dir: string) {
   }
 }
 
+const VENDOR_FILE = /^([a-z0-9-]{1,32})\.(png|jpg|webp|gif|svg)$/;
+
+async function listVendorLogos(dir: string): Promise<Record<string, string>> {
+  try {
+    const out: Record<string, string> = {};
+    for (const f of (await readdir(path.join(dir, 'vendors'))).sort()) {
+      const m = VENDOR_FILE.exec(f); // lower-case names only, e.g. amd.svg
+      if (m && !out[m[1]]) out[m[1]] = `/api/vendors/${encodeURIComponent(f)}`;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function sendImage(res: ServerResponse, file: string, body: Buffer, cache: string) {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', EXT_TYPES[path.extname(file).slice(1)]);
+  res.setHeader('Cache-Control', cache);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // An uploaded SVG opened directly must not be able to run script on this origin.
+  res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+  res.end(body);
+}
+
 async function atomicWrite(file: string, data: string | Buffer) {
   await mkdir(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
@@ -136,13 +163,7 @@ export function createConfigHandler(dir: string) {
       if (req.method === 'GET') {
         const f = await findLogo(dir);
         if (!f) return send(res, 404, { error: 'No logo uploaded' });
-        res.statusCode = 200;
-        res.setHeader('Content-Type', EXT_TYPES[path.extname(f).slice(1)]);
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-        // An uploaded SVG opened directly must not be able to run script on this origin.
-        res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox");
-        return res.end(await readFile(f));
+        return sendImage(res, f, await readFile(f), 'no-cache');
       }
       if (req.method === 'PUT') {
         assertSameOrigin(req);
@@ -161,6 +182,29 @@ export function createConfigHandler(dir: string) {
         return send(res, 204);
       }
       throw new HttpError(405, 'Method not allowed');
+    }
+
+    if (pathname === '/api/vendors') {
+      if (req.method !== 'GET') throw new HttpError(405, 'Method not allowed');
+      return send(res, 200, await listVendorLogos(dir));
+    }
+
+    if (pathname.startsWith('/api/vendors/')) {
+      if (req.method !== 'GET') throw new HttpError(405, 'Method not allowed');
+      // Whitelisted file-name shape: no separators, so no way out of the vendors folder.
+      let name = '';
+      try {
+        name = decodeURIComponent(pathname.slice('/api/vendors/'.length));
+      } catch {
+        /* malformed escape → falls through to 404 */
+      }
+      if (!VENDOR_FILE.test(name)) throw new HttpError(404, 'Unknown vendor logo');
+      const file = path.join(dir, 'vendors', name);
+      try {
+        return sendImage(res, file, await readFile(file), 'no-cache');
+      } catch {
+        throw new HttpError(404, 'Unknown vendor logo');
+      }
     }
 
     throw new HttpError(404, 'Unknown API route');

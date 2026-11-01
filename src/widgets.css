@@ -1194,3 +1194,129 @@
   .drawer__foot { padding-left: 14px; padding-right: 14px; }
   .colors { grid-template-columns: 1fr; }
 }
+
+/* ---------- manufacturer badges ---------- */
+
+/* Logos sit straight on the card in the brand colour (--v, set inline per vendor): a Simple Icons
+   glyph where one exists, otherwise the vendor's wordmark set in the display face.
+   "Theme tint" mode passes the theme accent as --v instead. */
+.vbadge {
+  --v: var(--c-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  align-self: center;
+  height: 20px;
+  color: var(--v);
+  line-height: 1;
+}
+
+.vbadge--glyph svg {
+  display: block;
+  flex-shrink: 0;
+  fill: currentColor;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--v) 45%, transparent));
+}
+
+.vbadge__mark,
+.vbadge__name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  white-space: nowrap;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--v) 45%, transparent);
+}
+
+.vbadge__mark {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.vbadge__name {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.vbadge--sm {
+  height: 16px;
+  gap: 4px;
+}
+
+.vbadge--sm .vbadge__mark {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.vbadge--sm .vbadge__name {
+  font-size: 8px;
+}
+
+/* user-supplied logo files sit on a neutral chip so any colour logo stays legible */
+.vbadge--img {
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px 6px;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+}
+
+.vbadge--img img {
+  height: 100%;
+  width: auto;
+  max-width: 96px;
+  object-fit: contain;
+  display: block;
+}
+
+.vbadge--tint.vbadge--img {
+  background: transparent;
+}
+
+.vbadge--tint.vbadge--img img {
+  filter: grayscale(1) brightness(1.6);
+}
+
+.drive__head .vbadge {
+  align-self: center;
+}
+
+/* oversized product-line wordmark behind a hero card's gauges */
+.vmark {
+  --v: var(--c-accent);
+  position: absolute;
+  right: 16px;
+  top: 52px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  /* Orbitron caps are ~1em wide: fill ~85% of the card, never more than 120px tall */
+  font-size: min(120px, calc(85cqi / var(--n, 7)));
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--v) 40%, transparent);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+  max-width: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.panel__head,
+.panel__body {
+  position: relative;
+  z-index: 1;
+}
+
+@container panel (max-width: 440px) {
+  .panel__head .vbadge:not(.vbadge--sm) .vbadge__mark { font-size: 10px; }
+  .panel__head .vbadge:not(.vbadge--sm) .vbadge__name { font-size: 9px; }
+}
+
+/* narrow cards: the badge carries the vendor, so the SYS code and extra subtitle text give way to it */
+@container panel (max-width: 400px) {
+  .panel__titles:has(.vbadge) .panel__code { display: none; }
+}
+
+@container panel (max-width: 300px) {
+  .panel__head .vbadge + .panel__subtitle { display: none; }
+}

@@ -1,9 +1,11 @@
 import { Meter } from '../components/Meter';
 import { Panel } from '../components/Panel';
 import { StatusTag } from '../components/StatusTag';
+import { VendorBadge } from '../components/VendorBadge';
 import { formatRate } from '../lib/format';
 import { TEMP_LIMITS, severity, useDisplay, type Severity } from '../lib/prefs';
 import type { StorageView } from '../lib/selectors';
+import { detectVendor } from '../lib/vendors';
 
 const rate = (v: number | null | undefined) => {
   const f = formatRate(v ?? null);
@@ -20,12 +22,14 @@ export function StoragePanel({ drives }: { drives: StorageView[] }) {
       <div className="drives">
         {drives.map((x, i) => {
           const t = d(x.temp);
+          const v = detectVendor(x.hw);
           const usedLvl: Severity = (x.used?.value ?? 0) >= 95 ? 'crit' : (x.used?.value ?? 0) >= 85 ? 'warn' : 'ok';
           return (
             <div key={x.hw.id} className="drive">
               <div className="drive__head">
                 <span className="drive__idx">{String(i).padStart(2, '0')}</span>
-                <span className="drive__name" title={x.hw.name}>{x.hw.name}</span>
+                <VendorBadge vendor={v?.vendor} hwName={x.hw.name} size="sm" />
+                <span className="drive__name" title={x.hw.name}>{v?.model ?? x.hw.name}</span>
                 <span className="drive__kind">{x.hw.id.split('/')[1]?.toUpperCase()}</span>
                 <span className={`drive__temp drive__temp--${levels[i]}`}>
                   {t.value}

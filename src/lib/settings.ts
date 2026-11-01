@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { VendorLogoMode } from './prefs';
 import { DEFAULT_THEME_ID, type ColorOverrides } from './themes';
 
 export type DataSource = 'live' | 'mock';
@@ -25,6 +26,8 @@ export interface Settings {
   tempUnit: 'C' | 'F';
   /** Fall back to the simulator when the live endpoint is unreachable. */
   autoFallback: boolean;
+  /** Manufacturer badges on CPU / GPU / board / drive cards. */
+  vendorLogos: VendorLogoMode;
   brand: Branding;
 }
 
@@ -55,6 +58,7 @@ export const DEFAULT_SETTINGS: Settings = {
   glitch: true,
   tempUnit: 'C',
   autoFallback: true,
+  vendorLogos: 'brand',
   brand: DEFAULT_BRANDING,
 };
 
@@ -82,6 +86,7 @@ export function normaliseSettings(raw: unknown): Settings {
     glitch: bool(r.glitch, d.glitch),
     tempUnit: oneOf(r.tempUnit, ['C', 'F'] as const, d.tempUnit),
     autoFallback: bool(r.autoFallback, d.autoFallback),
+    vendorLogos: oneOf(r.vendorLogos, ['brand', 'theme', 'off'] as const, d.vendorLogos),
     brand: {
       show: bool(b.show, DEFAULT_BRANDING.show),
       title: str(b.title, DEFAULT_BRANDING.title, 80),
@@ -229,4 +234,24 @@ export async function uploadLogo(file: File): Promise<string> {
 
 export async function deleteLogo() {
   await fetch(LOGO_API, { method: 'DELETE' }).catch(() => undefined);
+}
+
+/** Manufacturer logos the user dropped into config/vendors/ (empty when there is no config server). */
+export function useVendorFiles(): Record<string, string> {
+  const [files, setFiles] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/vendors', { cache: 'no-store' })
+      .then((r) => (r.ok && r.headers.get('content-type')?.includes('json') ? r.json() : {}))
+      .then((m: unknown) => {
+        if (!alive || !m || typeof m !== 'object') return;
+        // only same-origin /api/vendors/ paths are accepted
+        setFiles(Object.fromEntries(Object.entries(m).filter(([, v]) => typeof v === 'string' && v.startsWith('/api/vendors/'))));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return files;
 }

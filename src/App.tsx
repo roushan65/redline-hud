@@ -5,7 +5,8 @@ import { SettingsDrawer } from './components/SettingsDrawer';
 import { useSensorFeed } from './hooks/useSensorFeed';
 import { PrefsContext } from './lib/prefs';
 import { boardView, cpuView, gpuView, gpus, hardwareOfKind, memoryView, networkViews, storageViews } from './lib/selectors';
-import { useSettings } from './lib/settings';
+import { dominantVendor } from './lib/vendors';
+import { useSettings, useVendorFiles } from './lib/settings';
 import { applyTheme, resolveTheme } from './lib/themes';
 import { BoardPanel } from './panels/BoardPanel';
 import { CpuPanel } from './panels/CpuPanel';
@@ -33,10 +34,15 @@ export default function App() {
       drives: storageViews(snap),
       nics: networkViews(snap),
       board: boardView(snap),
+      ramVendor: dominantVendor(hardwareOfKind(snap, 'dimm')),
     };
   }, [snap]);
 
-  const prefs = useMemo(() => ({ tempUnit: settings.tempUnit }), [settings.tempUnit]);
+  const vendorFiles = useVendorFiles();
+  const prefs = useMemo(
+    () => ({ tempUnit: settings.tempUnit, vendorLogos: settings.vendorLogos, vendorFiles }),
+    [settings.tempUnit, settings.vendorLogos, vendorFiles],
+  );
   const fx = `${settings.scanlines ? ' fx-scan' : ''}${settings.glitch ? ' fx-glitch' : ''}`;
   const machine = snap?.machine ?? '— — —';
 
@@ -81,7 +87,7 @@ export default function App() {
             </div>
             <div className="dash__center">
               {settings.brand.show && <BrandPanel brand={settings.brand} machine={machine} />}
-              <MemoryPanel mem={views.mem} />
+              <MemoryPanel mem={views.mem} vendor={views.ramVendor} />
             </div>
             {views.gpus.length > 0 && (
               <div className="dash__gpu">

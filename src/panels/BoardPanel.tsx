@@ -1,8 +1,10 @@
 import { FanDial } from '../components/FanDial';
 import { Panel } from '../components/Panel';
 import { StatusTag } from '../components/StatusTag';
+import { VendorBadge } from '../components/VendorBadge';
 import { TEMP_LIMITS, severity, useDisplay, type Severity } from '../lib/prefs';
 import type { BoardView } from '../lib/selectors';
+import { detectVendor } from '../lib/vendors';
 
 export function BoardPanel({ board }: { board: BoardView }) {
   const d = useDisplay();
@@ -11,9 +13,17 @@ export function BoardPanel({ board }: { board: BoardView }) {
   const worst: Severity = levels.includes('crit') ? 'crit' : levels.includes('warn') ? 'warn' : 'ok';
   // Pair each fan with its PWM control of the same name.
   const dutyFor = (name: string) => board.controls.find((c) => c.name === name);
+  const v = detectVendor(board.hw);
 
   return (
-    <Panel title="Mainboard" code="SYS.05" subtitle={board.hw.name} right={<StatusTag level={worst} />} className="panel--minor">
+    <Panel
+      title="Mainboard"
+      code="SYS.05"
+      subtitle={v?.model ?? board.hw.name}
+      badge={<VendorBadge vendor={v?.vendor} hwName={board.hw.name} size="sm" />}
+      right={<StatusTag level={worst} />}
+      className="panel--minor"
+    >
       <div className="thermals">
         {board.temps.map((t, i) => {
           const v = d(t);

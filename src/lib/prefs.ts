@@ -2,11 +2,16 @@ import { createContext, useContext } from 'react';
 import { formatValue } from './format';
 import type { Sensor } from './types';
 
+export type VendorLogoMode = 'brand' | 'theme' | 'off';
+
 export interface Prefs {
   tempUnit: 'C' | 'F';
+  vendorLogos: VendorLogoMode;
+  /** vendor id → URL of a user-supplied logo in config/vendors/ */
+  vendorFiles: Record<string, string>;
 }
 
-export const PrefsContext = createContext<Prefs>({ tempUnit: 'C' });
+export const PrefsContext = createContext<Prefs>({ tempUnit: 'C', vendorLogos: 'brand', vendorFiles: {} });
 
 export function usePrefs() {
   return useContext(PrefsContext);

@@ -2,10 +2,12 @@ import { Meter } from '../components/Meter';
 import { Panel } from '../components/Panel';
 import { RadialGauge } from '../components/RadialGauge';
 import { StatusTag } from '../components/StatusTag';
+import { VendorBadge } from '../components/VendorBadge';
 import { LOAD_LIMITS, TEMP_LIMITS, severity, useDisplay } from '../lib/prefs';
 import type { MemoryView } from '../lib/selectors';
+import type { Vendor } from '../lib/vendors';
 
-export function MemoryPanel({ mem }: { mem: MemoryView }) {
+export function MemoryPanel({ mem, vendor }: { mem: MemoryView; vendor?: Vendor | null }) {
   const d = useDisplay();
   const used = mem.used?.value ?? null;
   const avail = mem.available?.value ?? null;
@@ -15,7 +17,14 @@ export function MemoryPanel({ mem }: { mem: MemoryView }) {
   const lvl = severity(mem.load?.value, LOAD_LIMITS);
 
   return (
-    <Panel title="Memory" code="SYS.03" subtitle={total ? `${total.toFixed(0)} GB installed` : undefined} right={<StatusTag level={lvl} />} className="panel--mem">
+    <Panel
+      title="Memory"
+      code="SYS.03"
+      subtitle={total ? `${total.toFixed(0)} GB installed` : undefined}
+      badge={<VendorBadge vendor={vendor} size="sm" />}
+      right={<StatusTag level={lvl} />}
+      className="panel--mem"
+    >
       <div className="mem">
         <RadialGauge label="RAM" value={mem.load?.value ?? null} display={d(mem.load)} level={lvl} sub={used != null ? `${used.toFixed(1)} GB` : undefined} />
         <div className="mem__side">
