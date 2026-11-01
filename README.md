@@ -19,12 +19,12 @@ A futuristic, themeable hardware-telemetry panel for [LibreHardwareMonitor](http
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:2077
 ```
 
 By default the UI polls `http://192.168.1.4:8085/data.json`. You can change the endpoint, refresh rate, theme, units and channel branding under **⚙ Settings**. Settings are saved to **`config/config.json`** on disk (see [Saved config](#saved-config)).
 
-If you don't have a LibreHardwareMonitor box handy, choose **Simulator** in Settings, or open `http://localhost:5173/?source=mock`.
+If you don't have a LibreHardwareMonitor box handy, choose **Simulator** in Settings, or open `http://localhost:2077/?source=mock`.
 
 ## Enabling the LibreHardwareMonitor API (Windows host)
 
@@ -43,7 +43,13 @@ LHM sends `Access-Control-Allow-Origin: *`, so the browser can call it directly.
 | `.env` | `VITE_DATA_SOURCE` | `live` (default) or `mock` |
 | `.env` | `LHM_PROXY_TARGET` | Upstream for the `/lhm/*` dev proxy |
 | `.env` | `PANEL_CONFIG_DIR` | Folder for `config.json` and the uploaded logo (default `./config`) |
+| `.env` | `PANEL_HOST` | Address the dev / preview server binds to (default `0.0.0.0`, all interfaces) |
+| `.env` | `PANEL_PORT` | Port for the dev / preview server (default `2077`) |
 | URL | `?source=mock&url=…&theme=netrunner` | Overrides for this session only; they are never written to `config.json` |
+
+`npm run dev` and `npm run preview` both listen on `0.0.0.0:2077` by default, so you can open the panel from a tablet or another PC at `http://<this-machine>:2077`. Set `PANEL_HOST=127.0.0.1` to keep it local to this machine. If the port is already in use, the server stops with an error rather than moving to another port. A one-off `npm run dev -- --port 3000` still overrides the setting.
+
+The config API can change settings and upload a logo, and with the default `0.0.0.0` binding anyone on your network can reach it. That's fine on a home LAN, but don't forward the port to the internet.
 
 When the link drops twice in a row, the panel falls back to the simulator and shows a banner. You can turn this off in Settings.
 
@@ -123,13 +129,14 @@ src/
   panels/            CPU, GPU, Memory, Network, Mainboard, Storage, Sensor index
 server/
   configApi.ts       Vite plugin: /api/config, /api/logo, /api/vendors (dev + preview servers)
+  listen.ts          PANEL_HOST / PANEL_PORT → server bind address
 config/              (created at runtime) config.json + logo
 ```
 
 ## Scripts
 
 ```bash
-npm run dev         # dev server (exposed on LAN via host: true)
+npm run dev         # dev server on PANEL_HOST:PANEL_PORT (default 0.0.0.0:2077)
 npm run build       # production build → dist/
 npm run preview     # serve dist/ (with the config API)
 npm run typecheck
