@@ -268,7 +268,7 @@ export function SettingsDrawer({ open, settings, status, onChange, onBrand, onRe
               ))}
             </div>
             <p className="hint">
-              Detected from the hardware names. Drop official logos into <code>config/vendors/</code> (e.g. <code>amd.svg</code>, <code>nvidia.png</code>) to replace the wordmarks.
+              Detected from the hardware names. Official logos are built in where available; drop files into <code>config/vendors/</code> (e.g. <code>gigabyte.svg</code>, <code>wd.png</code>) to add or replace one.
             </p>
           </div>
           <label className="check">
