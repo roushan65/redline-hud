@@ -49,20 +49,20 @@ A single-file server that you open in any browser, on this machine or across you
 
 | Platform | File |
 |---|---|
-| Windows (x64) | `redline-hud-windows-x64.zip` |
-| macOS (Apple silicon) | `redline-hud-macos-arm64.zip` |
-| macOS (Intel) | `redline-hud-macos-x64.zip` |
-| Linux (x64) | `redline-hud-linux-x64.tar.gz` |
-| Linux (ARM64, e.g. Raspberry Pi 4/5) | `redline-hud-linux-arm64.tar.gz` |
+| Windows (x64) | `redline-hud-server-windows-x64.zip` |
+| macOS (Apple silicon) | `redline-hud-server-macos-arm64.zip` |
+| macOS (Intel) | `redline-hud-server-macos-x64.zip` |
+| Linux (x64) | `redline-hud-server-linux-x64.tar.gz` |
+| Linux (ARM64, e.g. Raspberry Pi 4/5) | `redline-hud-server-linux-arm64.tar.gz` |
 
-Unzip the file, run `redline-hud-…`, then open `http://localhost:2077`. The app keeps `config/` (settings, uploaded logo and `vendors/`) in the same folder as the executable. To change the port or bind address, copy `.env.example` to `.env` next to the executable and edit it. `PANEL_HOST`, `PANEL_PORT`, `PANEL_CONFIG_DIR` and `LHM_PROXY_TARGET` are read when the app starts. The `VITE_*` defaults are fixed into the build, so change those in Settings instead.
+Unzip the file, run `redline-hud-server-…`, then open `http://localhost:2077`. The app keeps `config/` (settings, uploaded logo and `vendors/`) in the same folder as the executable. To change the port or bind address, copy `.env.example` to `.env` next to the executable and edit it. `PANEL_HOST`, `PANEL_PORT`, `PANEL_CONFIG_DIR` and `LHM_PROXY_TARGET` are read when the app starts. The `VITE_*` defaults are fixed into the build, so change those in Settings instead.
 
 ### First run
 
 Neither app is signed with a paid certificate, so the OS will ask you to confirm the first time:
 
 - **Windows:** SmartScreen may warn about an unrecognised app. Choose *More info → Run anyway*. For the server app, Windows Firewall will ask whether to allow LAN access.
-- **macOS:** right-click the app and choose *Open*, or remove the quarantine flag: `xattr -dr com.apple.quarantine "/Applications/REDLINE HUD.app"` for the desktop app, or `xattr -d com.apple.quarantine redline-hud-macos-*` for the server app.
+- **macOS:** right-click the app and choose *Open*, or remove the quarantine flag: `xattr -dr com.apple.quarantine "/Applications/REDLINE HUD.app"` for the desktop app, or `xattr -d com.apple.quarantine redline-hud-server-macos-*` for the server app.
 - **Linux:** run `chmod +x redline-hud-*` if your extractor or browser dropped the executable bit. The desktop app needs WebKitGTK 4.1, which the `.deb` / `.rpm` pull in.
 
 `SHA256SUMS.txt` on each release lists the checksum of every file.
@@ -200,7 +200,7 @@ config/              (created at runtime) config.json + logo
 npm run dev         # dev server on PANEL_HOST:PANEL_PORT (default 0.0.0.0:2077)
 npm run build       # production build → dist/
 npm run preview     # serve dist/ (with the config API)
-npm run build:standalone   # single executable for this OS → release/
+npm run server:build       # server app for this OS → release/
 npm run desktop:dev        # desktop app window with hot reload (needs Rust)
 npm run desktop:build      # desktop installers for this OS → src-tauri/target/release/bundle/
 npm run typecheck
@@ -219,6 +219,6 @@ Publish a release on GitHub (*Releases → Draft a new release*, with a tag such
 
 If one platform fails, the others are still attached. To try the builds without publishing anything, go to *Actions → Release builds → Run workflow* and leave **tag** empty: the files appear as workflow artifacts only. To rebuild for a release that already exists, for example after fixing a failed platform, enter its tag (such as `v1.1.0`). The new files replace the old ones on that release.
 
-The server app is a [Node.js single executable application](https://nodejs.org/api/single-executable-applications.html): the Node 24 runtime, the bundled server and the built UI in one file. Most of its size, around 100 MB, is the Node runtime. To build one for your own machine, run `npm run build:standalone`.
+The server app is a [Node.js single executable application](https://nodejs.org/api/single-executable-applications.html): the Node 24 runtime, the bundled server and the built UI in one file. Most of its size, around 100 MB, is the Node runtime. To build one for your own machine, run `npm run server:build`.
 
 The desktop app needs [Rust](https://rustup.rs) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS. On Linux that means WebKitGTK 4.1. Then run `npm run desktop:build`. The macOS build gets an ad-hoc signature, which is enough to run it on Apple silicon but not to pass Gatekeeper without the right-click *Open* step. The icons in `src-tauri/icons/` come from `src-tauri/app-icon.svg`; after editing it, run `npx tauri icon src-tauri/app-icon.svg`.

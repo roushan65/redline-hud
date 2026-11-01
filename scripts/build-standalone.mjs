@@ -1,7 +1,7 @@
 // Builds a self-contained REDLINE//HUD executable for the current OS / CPU using Node's
 // single executable applications (https://nodejs.org/api/single-executable-applications.html).
 //
-//   npm run build:standalone          → release/redline-hud-<os>-<arch>[.exe] + a zip / tar.gz
+//   npm run server:build              → release/redline-hud-server-<os>-<arch>[.exe] + a zip / tar.gz
 //
 // Steps: build the UI → bundle server/standalone.ts to one CommonJS file → generate a SEA blob
 // with every dist/ file embedded as an asset → inject it into a copy of the running node binary.
@@ -17,7 +17,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const out = path.join(root, 'release');
 const work = path.join(out, 'build');
 const platform = { win32: 'windows', darwin: 'macos', linux: 'linux' }[process.platform] ?? process.platform;
-const name = `redline-hud-${platform}-${process.arch}`;
+const name = `redline-hud-server-${platform}-${process.arch}`;
 const exe = path.join(out, name + (process.platform === 'win32' ? '.exe' : ''));
 
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' && cmd === 'npx' });

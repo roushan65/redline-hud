@@ -1,7 +1,7 @@
 name: Release builds
 
 # Publishing a GitHub release builds REDLINE//HUD for each OS / CPU in two forms:
-#   build   → a standalone server executable (Node single executable app), opened in a browser
+#   server  → a standalone server executable (Node single executable app), opened in a browser
 #   desktop → a Tauri desktop app (installer / .dmg / AppImage / .deb / .rpm)
 # Each job attaches its files to that release as soon as it passes, then SHA256SUMS.txt is added
 # for whatever was built.
@@ -40,7 +40,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-  build:
+  server:
     needs: test
     strategy:
       fail-fast: false
@@ -52,7 +52,7 @@ jobs:
           - { os: ubuntu-latest, target: linux-x64 }
           - { os: ubuntu-24.04-arm, target: linux-arm64 }
     runs-on: ${{ matrix.os }}
-    name: build (${{ matrix.target }})
+    name: server (${{ matrix.target }})
     permissions:
       contents: write # gh release upload
     steps:
@@ -62,12 +62,12 @@ jobs:
           # the executable embeds this Node runtime; sea.getAssetKeys() needs 24.8+
           node-version: 24
       - run: npm install --no-audit --no-fund
-      - run: npm run build:standalone
+      - run: npm run server:build
 
       - name: Smoke test
         shell: bash
         run: |
-          exe=$(ls release/redline-hud-${{ matrix.target }}* | grep -vE '\.(zip|tar\.gz)$')
+          exe=$(ls release/redline-hud-server-${{ matrix.target }}* | grep -vE '\.(zip|tar\.gz)$')
           # PANEL_CONFIG_DIR is relative to the executable's folder, so this lands in release/smoke-config
           PANEL_HOST=127.0.0.1 PANEL_CONFIG_DIR=smoke-config "$exe" > server.log 2>&1 &
           pid=$!
@@ -82,7 +82,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: redline-hud-${{ matrix.target }}
+          name: redline-hud-server-${{ matrix.target }}
           path: |
             release/*.zip
             release/*.tar.gz
@@ -181,8 +181,8 @@ jobs:
     # (job-level `if` can't read workflow `env`, hence the repeated tag expression)
     if: >-
       always() && (github.event.release.tag_name || inputs.tag) != '' &&
-      (contains(fromJSON('["success","failure"]'), needs.build.result) || contains(fromJSON('["success","failure"]'), needs.desktop.result))
-    needs: [build, desktop]
+      (contains(fromJSON('["success","failure"]'), needs.server.result) || contains(fromJSON('["success","failure"]'), needs.desktop.result))
+    needs: [server, desktop]
     runs-on: ubuntu-latest
     permissions:
       contents: write
