@@ -1,5 +1,5 @@
 /* =========================================================================
-   CYBER//SENSOR — base, HUD chrome, panel frame
+   REDLINE//HUD — base, HUD chrome, panel frame
    All colours come from --c-* tokens written by applyTheme().
    ========================================================================= */
 
@@ -147,6 +147,22 @@ small {
   stroke: var(--c-accent);
   stroke-width: 1.5;
   filter: drop-shadow(0 0 6px rgba(var(--c-glow-rgb), 0.6));
+  stroke-linecap: round;
+}
+
+.hud__logo .hud__logo-red {
+  stroke: var(--c-crit);
+  stroke-width: 3;
+}
+
+.hud__logo .hud__logo-needle {
+  stroke: var(--c-text);
+  stroke-width: 2;
+}
+
+.hud__logo circle {
+  fill: var(--c-accent);
+  stroke: none;
 }
 
 .hud__title {

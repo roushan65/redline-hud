@@ -1,8 +1,8 @@
-# CYBER//SENSOR
+# REDLINE//HUD
 
 A futuristic, themeable hardware-telemetry panel for [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), built with React + Vite. Its default look is inspired by Cyberpunk 2077.
 
-![CYBER//SENSOR dashboard in the Tyger Claws theme: CPU and GPU gauges, channel card, memory, network, mainboard and storage cards with manufacturer logos](docs/screenshots/dashboard-tyger-claws.png)
+![REDLINE//HUD dashboard in the default Cyberpunk 2077 theme: CPU and GPU gauges, channel card, memory, network, mainboard and storage cards with manufacturer logos](docs/screenshots/dashboard.png)
 
 - **Built for gamers.** CPU and GPU get the big cards, memory comes next, and everything else is compact.
 - **Your channel in the middle.** Show your channel name, tagline and logo in the centre of the panel. It's made for streaming overlays and desk displays.
@@ -12,7 +12,7 @@ A futuristic, themeable hardware-telemetry panel for [LibreHardwareMonitor](http
 - **Settings are saved to `config/config.json`** on disk, so the panel looks the same on every machine that opens it.
 
 <p align="center">
-  <img src="docs/screenshots/settings.png" alt="Settings drawer: channel logo upload, LibreHardwareMonitor endpoint, refresh interval, theme picker with colour overrides, and display options" width="85%">
+  <img src="docs/screenshots/settings.png" alt="Settings drawer: save status, channel name, tagline and logo, LibreHardwareMonitor endpoint, refresh interval, and theme picker with colour overrides" width="85%">
 </p>
 
 ## Quick start

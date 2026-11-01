@@ -29,14 +29,17 @@ export function Header({ machine, link, latencyMs, error, themeTagline, onOpenSe
     <header className="hud">
       <div className="hud__brand">
         <span className="hud__logo" aria-hidden>
+          {/* tachometer: sweep, redline zone, needle pinned at the limit */}
           <svg viewBox="0 0 32 32">
-            <path d="M4 8 L16 2 L28 8 L28 24 L16 30 L4 24 Z" />
-            <path d="M10 12 L16 9 L22 12 L22 20 L16 23 L10 20 Z" />
+            <path d="M6.1 25.9 A13 13 0 0 1 20.5 4.8" />
+            <path className="hud__logo-red" d="M23.5 6.4 A13 13 0 0 1 25.9 25.9" />
+            <path className="hud__logo-needle" d="M16 19 L24 11" />
+            <circle cx="16" cy="19" r="2" />
           </svg>
         </span>
         <div>
-          <h1 className="hud__title glitch" data-text="CYBER//SENSOR">
-            CYBER<span>//</span>SENSOR
+          <h1 className="hud__title glitch" data-text="REDLINE//HUD">
+            REDLINE<span>//</span>HUD
           </h1>
           <p className="hud__tagline">{themeTagline}</p>
         </div>

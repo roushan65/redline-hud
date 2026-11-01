@@ -224,7 +224,7 @@ export function createConfigHandler(dir: string) {
 export function configApi(dir: string): Plugin {
   const handler = createConfigHandler(dir);
   return {
-    name: 'cyber-sensor-config-api',
+    name: 'redline-hud-config-api',
     configureServer(server) {
       server.middlewares.use(handler);
     },

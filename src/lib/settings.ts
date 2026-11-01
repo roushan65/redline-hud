@@ -35,7 +35,8 @@ export interface Settings {
 export type SaveTarget = 'loading' | 'disk' | 'browser';
 export type SaveStatus = { target: SaveTarget; state: 'idle' | 'saving' | 'saved' | 'error'; error?: string };
 
-const KEY = 'cyber-sensor-panel:settings';
+const KEY = 'redline-hud:settings';
+const LEGACY_KEY = 'cyber-sensor-panel:settings'; // pre-rebrand name, read once on upgrade
 export const CONFIG_API = '/api/config';
 export const LOGO_API = '/api/logo';
 const SAVE_DEBOUNCE_MS = 400;
@@ -100,7 +101,7 @@ export function normaliseSettings(raw: unknown): Settings {
 
 function loadLocal(): Settings | null {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY);
     return raw ? normaliseSettings(JSON.parse(raw)) : null;
   } catch {
     return null; // corrupted storage

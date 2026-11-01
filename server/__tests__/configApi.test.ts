@@ -11,7 +11,7 @@ let server: Server;
 let base: string;
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'csp-config-'));
+  dir = await mkdtemp(path.join(tmpdir(), 'redline-config-'));
   const handler = createConfigHandler(dir);
   server = createServer((req, res) =>
     handler(req, res, () => {
