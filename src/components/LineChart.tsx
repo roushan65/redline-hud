@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 export interface Series {
   key: string;
@@ -21,19 +21,30 @@ interface Props {
   capacity: number;
   ariaLabel: string;
   showAxis?: boolean;
+  /** Grow to the height the parent gives it (flex), with `height` as the minimum. */
+  fill?: boolean;
 }
 
 /**
  * Time-series line chart: 2px lines, ~10% area wash for a single series,
  * hairline grid, crosshair + one tooltip listing every series.
  */
-export function LineChart({ series, height = 90, yMax, yMin = 0, format, intervalMs, capacity, ariaLabel, showAxis = true }: Props) {
+export function LineChart({ series, height = 90, yMax, yMin = 0, format, intervalMs, capacity, ariaLabel, showAxis = true, fill = false }: Props) {
   const id = useId();
   const ref = useRef<SVGSVGElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
+  const [fillH, setFillH] = useState(height);
+  useEffect(() => {
+    const el = box.current;
+    if (!fill || !el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([e]) => setFillH(Math.max(height, Math.round(e.contentRect.height))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fill, height]);
   const W = 400;
   const padL = showAxis ? 0 : 0;
-  const H = height;
+  const H = fill ? fillH : height;
 
   const top = useMemo(() => {
     if (yMax != null) return yMax;
@@ -63,7 +74,7 @@ export function LineChart({ series, height = 90, yMax, yMin = 0, format, interva
   const ago = hover != null ? ((len - 1 - hover) * intervalMs) / 1000 : 0;
 
   return (
-    <div className="chart" style={{ height: H }}>
+    <div ref={box} className={`chart${fill ? ' chart--fill' : ''}`} style={fill ? { minHeight: height } : { height: H }}>
       <svg
         ref={ref}
         viewBox={`0 0 ${W} ${H}`}
