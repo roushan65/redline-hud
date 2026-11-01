@@ -99,7 +99,8 @@ small {
   background:
     repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px),
     radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.45));
-  mix-blend-mode: multiply;
+  /* no mix-blend-mode: multiplying by black looks identical to plain alpha, but a full-screen blend layer
+     has to be re-composited every frame anything beneath it moves (spinning fans), which heats up tablets */
 }
 
 /* ---------- header ---------- */
@@ -496,34 +497,29 @@ small {
     radial-gradient(ellipse 70% 60% at 50% 35%, rgba(var(--c-accent-rgb), 0.12), transparent 70%),
     linear-gradient(180deg, rgba(var(--c-accent2-rgb), 0.05), transparent),
     var(--c-surface);
-  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  /* same frame as .panel: chamfered top-right / bottom-left, square corners for the brackets */
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
   animation: panel-in 0.5s ease-out both;
   container: brand / inline-size;
 }
 
-.brand::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border: 1px solid var(--c-line);
-  clip-path: inherit;
-}
-
 .brand::after {
-  /* sweeping scan beam behind the logo */
+  /* sweeping scan beam behind the logo; moved with transform (GPU) rather than background-position (repaint per frame) */
   content: '';
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 300%;
   pointer-events: none;
   background: linear-gradient(180deg, transparent 0 45%, rgba(var(--c-accent2-rgb), 0.08) 50%, transparent 55% 100%);
-  background-size: 100% 300%;
-  animation: brand-scan 6s linear infinite;
+  animation: brand-scan 3s linear infinite;
+  will-change: transform;
 }
 
 @keyframes brand-scan {
-  from { background-position: 0 100%; }
-  to { background-position: 0 -200%; }
+  from { transform: translateY(-66.667%); }
+  to { transform: translateY(33.333%); }
 }
 
 .brand__logo {
@@ -645,7 +641,8 @@ small {
 }
 
 /* hairline border drawn inside the clip (clip-path eats real borders on the chamfer) */
-.panel::before {
+.panel::before,
+.brand::before {
   content: '';
   position: absolute;
   inset: 0;
