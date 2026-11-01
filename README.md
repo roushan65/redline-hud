@@ -62,7 +62,11 @@ Unzip the file, run `redline-hud-server-…`, then open `http://localhost:2077`.
 Neither app is signed with a paid certificate, so the OS will ask you to confirm the first time:
 
 - **Windows:** SmartScreen may warn about an unrecognised app. Choose *More info → Run anyway*. For the server app, Windows Firewall will ask whether to allow LAN access.
-- **macOS:** right-click the app and choose *Open*, or remove the quarantine flag: `xattr -dr com.apple.quarantine "/Applications/REDLINE HUD.app"` for the desktop app, or `xattr -d com.apple.quarantine redline-hud-server-macos-*` for the server app.
+- **macOS:** the apps aren't notarised by Apple, so macOS says it can't verify them. The quickest fix is to remove the quarantine flag in Terminal:
+  - server app: `xattr -d com.apple.quarantine redline-hud-server-macos-*`, then run `./redline-hud-server-macos-arm64` (or `-x64`)
+  - desktop app: `xattr -dr com.apple.quarantine "/Applications/REDLINE HUD.app"`
+
+  Or open the app once, dismiss the warning, then go to *System Settings → Privacy & Security* and click *Open Anyway*. Since macOS 15, right-click → *Open* no longer skips the check.
 - **Linux:** run `chmod +x redline-hud-*` if your extractor or browser dropped the executable bit. The desktop app needs WebKitGTK 4.1, which the `.deb` / `.rpm` pull in.
 
 `SHA256SUMS.txt` on each release lists the checksum of every file.
