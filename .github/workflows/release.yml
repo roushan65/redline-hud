@@ -1,17 +1,28 @@
 name: Release executables
 
-# Publishing a GitHub release builds a standalone REDLINE//HUD executable for each OS / CPU
-# and attaches the archives to that release. "Run workflow" builds them as artifacts only.
+# Publishing a GitHub release builds a standalone REDLINE//HUD executable for each OS / CPU.
+# Each build job attaches its archive to that release as soon as it passes its smoke test,
+# then SHA256SUMS.txt is added for whatever was built.
+# "Run workflow" builds the same archives as workflow artifacts; give it the tag of an
+# existing release to attach them there too (e.g. to redo one platform that failed).
 on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to attach the builds to (leave empty for artifacts only)
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event.release.tag_name || inputs.tag || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -40,6 +51,8 @@ jobs:
           - { os: ubuntu-24.04-arm, target: linux-arm64 }
     runs-on: ${{ matrix.os }}
     name: build (${{ matrix.target }})
+    permissions:
+      contents: write # gh release upload
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -74,21 +87,39 @@ jobs:
             release/*.tar.gz
           if-no-files-found: error
 
-  publish:
-    if: github.event_name == 'release'
+      - name: Attach to release
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(release/*.zip release/*.tar.gz)
+          gh release upload "$RELEASE_TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+          echo "attached ${files[*]} to $RELEASE_TAG"
+
+  checksums:
+    # runs even if some platforms failed, so the archives that did attach still get checksums
+    # (job-level `if` can't read workflow `env`, hence the repeated tag expression)
+    if: always() && (github.event.release.tag_name || inputs.tag) != '' && contains(fromJSON('["success","failure"]'), needs.build.result)
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: assets
-          merge-multiple: true
-      - name: Checksums
-        working-directory: assets
-        run: sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
-      - name: Attach to release
+      - name: Download the archives attached to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" assets/* --clobber --repo "${{ github.repository }}"
+        run: |
+          mkdir assets
+          gh release download "$RELEASE_TAG" --dir assets --repo "$GITHUB_REPOSITORY" --pattern 'redline-hud-*' \
+            || { echo "::warning::No archives on $RELEASE_TAG, so no checksums written"; exit 0; }
+      - name: Checksums
+        if: hashFiles('assets/redline-hud-*') != ''
+        working-directory: assets
+        run: sha256sum redline-hud-* > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Attach SHA256SUMS.txt
+        if: hashFiles('assets/SHA256SUMS.txt') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$RELEASE_TAG" assets/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"

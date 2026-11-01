@@ -177,8 +177,8 @@ Publish a release on GitHub (*Releases → Draft a new release*, with a tag such
 1. runs the type-check and tests;
 2. builds the executable on Windows, macOS (Apple silicon and Intel) and Linux (x64 and ARM64);
 3. starts each executable and checks that it serves the UI and saves config;
-4. attaches the archives and `SHA256SUMS.txt` to the release.
+4. attaches each platform's archive to the release as soon as that platform passes, then adds `SHA256SUMS.txt`.
 
-To try the builds without publishing anything, go to *Actions → Release executables → Run workflow*. The archives then appear as workflow artifacts.
+If one platform fails, the others are still attached. To try the builds without publishing anything, go to *Actions → Release executables → Run workflow* and leave **tag** empty: the archives appear as workflow artifacts only. To rebuild for a release that already exists, for example after fixing a failed platform, enter its tag (such as `v1.1.0`). The new archives replace the old ones on that release.
 
 Each executable is a [Node.js single executable application](https://nodejs.org/api/single-executable-applications.html): the Node 24 runtime, the bundled server and the built UI in one file. Most of its size, around 100 MB, is the Node runtime. To build one for your own machine, run `npm run build:standalone`.
