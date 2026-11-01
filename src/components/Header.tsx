@@ -1,0 +1,67 @@
+import { useEffect, useState } from 'react';
+import type { LinkState } from '../hooks/useSensorFeed';
+
+interface Props {
+  machine: string;
+  link: LinkState;
+  latencyMs: number | null;
+  error: string | null;
+  themeTagline: string;
+  onOpenSettings: () => void;
+}
+
+const LINK_TEXT: Record<LinkState, string> = {
+  connecting: 'HANDSHAKE',
+  live: 'LINK ESTABLISHED',
+  mock: 'SIMULATION',
+  fallback: 'LINK LOST // SIM',
+  error: 'NO SIGNAL',
+};
+
+export function Header({ machine, link, latencyMs, error, themeTagline, onOpenSettings }: Props) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <header className="hud">
+      <div className="hud__brand">
+        <span className="hud__logo" aria-hidden>
+          <svg viewBox="0 0 32 32">
+            <path d="M4 8 L16 2 L28 8 L28 24 L16 30 L4 24 Z" />
+            <path d="M10 12 L16 9 L22 12 L22 20 L16 23 L10 20 Z" />
+          </svg>
+        </span>
+        <div>
+          <h1 className="hud__title glitch" data-text="CYBER//SENSOR">
+            CYBER<span>//</span>SENSOR
+          </h1>
+          <p className="hud__tagline">{themeTagline}</p>
+        </div>
+      </div>
+
+      <div className="hud__center">
+        <span className="hud__machine">{machine}</span>
+        <span className="hud__clock">
+          {now.toLocaleTimeString([], { hour12: false })}
+          <small>{now.toLocaleDateString([], { year: 'numeric', month: 'short', day: '2-digit' }).toUpperCase()}</small>
+        </span>
+      </div>
+
+      <div className="hud__right">
+        <span className={`link link--${link}`} title={error ?? undefined}>
+          <span className="link__dot" aria-hidden />
+          <span>{LINK_TEXT[link]}</span>
+          {latencyMs != null && link === 'live' && <small>{latencyMs}ms</small>}
+        </span>
+        <button type="button" className="btn btn--icon" onClick={onOpenSettings} aria-label="Open settings">
+          <svg viewBox="0 0 24 24" aria-hidden>
+            <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9 4-.1-1.3 2-1.6-2-3.4-2.4 1a8 8 0 0 0-2.2-1.3L15.9 3h-3.9l-.4 2.5a8 8 0 0 0-2.2 1.3l-2.4-1-2 3.4 2 1.6L7 12l.1 1.3-2 1.6 2 3.4 2.4-1a8 8 0 0 0 2.2 1.3l.4 2.5h3.9l.4-2.5a8 8 0 0 0 2.2-1.3l2.4 1 2-3.4-2-1.6Z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+  );
+}
