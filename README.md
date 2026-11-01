@@ -15,7 +15,27 @@ A futuristic, themeable hardware-telemetry panel for [LibreHardwareMonitor](http
   <img src="docs/screenshots/settings.png" alt="Settings drawer: save status, channel name, tagline and logo, LibreHardwareMonitor endpoint, refresh interval, and theme picker with colour overrides" width="85%">
 </p>
 
-## Quick start
+## Download
+
+You don't need Node.js to run the panel. Each [GitHub release](../../releases/latest) includes a single-file app for every platform:
+
+| Platform | File |
+|---|---|
+| Windows (x64) | `redline-hud-windows-x64.zip` |
+| macOS (Apple silicon) | `redline-hud-macos-arm64.zip` |
+| macOS (Intel) | `redline-hud-macos-x64.zip` |
+| Linux (x64) | `redline-hud-linux-x64.tar.gz` |
+| Linux (ARM64, e.g. Raspberry Pi 4/5) | `redline-hud-linux-arm64.tar.gz` |
+
+Unzip the file, run `redline-hud-…`, then open `http://localhost:2077`. The app keeps `config/` (settings, uploaded logo and `vendors/`) in the same folder as the executable. To change the port or bind address, copy `.env.example` to `.env` next to the executable and edit it. `PANEL_HOST`, `PANEL_PORT`, `PANEL_CONFIG_DIR` and `LHM_PROXY_TARGET` are read when the app starts. The `VITE_*` defaults are fixed into the build, so change those in Settings instead.
+
+- **Windows:** SmartScreen may warn about an unrecognised app. Choose *More info → Run anyway*. Windows Firewall will ask whether to allow LAN access.
+- **macOS:** the app isn't notarised, so the first time, right-click it and choose *Open*, or run `xattr -d com.apple.quarantine redline-hud-macos-*`.
+- **Linux:** run `chmod +x redline-hud-linux-*` if your extractor dropped the executable bit.
+
+`SHA256SUMS.txt` on each release lists the checksum of every archive.
+
+## Quick start (from source)
 
 ```bash
 npm install
@@ -130,6 +150,11 @@ src/
 server/
   configApi.ts       Vite plugin: /api/config, /api/logo, /api/vendors (dev + preview servers)
   listen.ts          PANEL_HOST / PANEL_PORT → server bind address
+  standalone.ts      server for the release executables (UI + config API + /lhm proxy)
+scripts/
+  build-standalone.mjs   packs the server and UI into a Node single executable
+.github/workflows/
+  release.yml        builds and attaches executables when a release is published
 config/              (created at runtime) config.json + logo
 ```
 
@@ -139,7 +164,21 @@ config/              (created at runtime) config.json + logo
 npm run dev         # dev server on PANEL_HOST:PANEL_PORT (default 0.0.0.0:2077)
 npm run build       # production build → dist/
 npm run preview     # serve dist/ (with the config API)
+npm run build:standalone   # single executable for this OS → release/
 npm run typecheck
 npm test            # unit tests (parser, settings, vendors, config API)
 LHM_LIVE_URL=http://192.168.1.4:8085/data.json npm test   # + live endpoint check
 ```
+
+## Releasing
+
+Publish a release on GitHub (*Releases → Draft a new release*, with a tag such as `v1.1.0`). The [release workflow](.github/workflows/release.yml) then:
+
+1. runs the type-check and tests;
+2. builds the executable on Windows, macOS (Apple silicon and Intel) and Linux (x64 and ARM64);
+3. starts each executable and checks that it serves the UI and saves config;
+4. attaches the archives and `SHA256SUMS.txt` to the release.
+
+To try the builds without publishing anything, go to *Actions → Release executables → Run workflow*. The archives then appear as workflow artifacts.
+
+Each executable is a [Node.js single executable application](https://nodejs.org/api/single-executable-applications.html): the Node 24 runtime, the bundled server and the built UI in one file. Most of its size, around 100 MB, is the Node runtime. To build one for your own machine, run `npm run build:standalone`.

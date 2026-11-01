@@ -1,0 +1,94 @@
+name: Release executables
+
+# Publishing a GitHub release builds a standalone REDLINE//HUD executable for each OS / CPU
+# and attaches the archives to that release. "Run workflow" builds them as artifacts only.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: windows-x64 }
+          - { os: macos-latest, target: macos-arm64 }
+          - { os: macos-15-intel, target: macos-x64 }
+          - { os: ubuntu-latest, target: linux-x64 }
+          - { os: ubuntu-24.04-arm, target: linux-arm64 }
+    runs-on: ${{ matrix.os }}
+    name: build (${{ matrix.target }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # the executable embeds this Node runtime; sea.getAssetKeys() needs 24.8+
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:standalone
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          exe=$(ls release/redline-hud-${{ matrix.target }}* | grep -vE '\.(zip|tar\.gz)$')
+          # PANEL_CONFIG_DIR is relative to the executable's folder, so this lands in release/smoke-config
+          PANEL_HOST=127.0.0.1 PANEL_CONFIG_DIR=smoke-config "$exe" > server.log 2>&1 &
+          pid=$!
+          trap 'kill $pid 2>/dev/null || true; cat server.log' EXIT
+          for _ in $(seq 1 30); do curl -fsS http://127.0.0.1:2077/ -o index.html && break; sleep 1; done
+          grep -q 'REDLINE//HUD' index.html
+          curl -fsS -o /dev/null "http://127.0.0.1:2077$(grep -oE '/assets/[^"]+\.js' index.html | head -1)"
+          curl -fsS http://127.0.0.1:2077/api/vendors
+          curl -fsS -X PUT -H 'Content-Type: application/json' -d '{"themeId":"netrunner"}' http://127.0.0.1:2077/api/config
+          test -f release/smoke-config/config.json
+          echo "smoke test passed"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redline-hud-${{ matrix.target }}
+          path: |
+            release/*.zip
+            release/*.tar.gz
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Checksums
+        working-directory: assets
+        run: sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" assets/* --clobber --repo "${{ github.repository }}"
