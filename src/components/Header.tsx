@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { LinkState } from '../hooks/useSensorFeed';
+import { useFullscreen } from '../hooks/useFullscreen';
 
 interface Props {
   machine: string;
@@ -19,6 +20,7 @@ const LINK_TEXT: Record<LinkState, string> = {
 };
 
 export function Header({ machine, link, latencyMs, error, themeTagline, onOpenSettings }: Props) {
+  const fullscreen = useFullscreen();
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -59,6 +61,26 @@ export function Header({ machine, link, latencyMs, error, themeTagline, onOpenSe
           <span>{LINK_TEXT[link]}</span>
           {latencyMs != null && link === 'live' && <small>{latencyMs}ms</small>}
         </span>
+        {fullscreen.supported && (
+          <button
+            type="button"
+            className="btn btn--icon"
+            onClick={fullscreen.toggle}
+            aria-label={fullscreen.active ? 'Exit fullscreen' : 'Enter fullscreen'}
+            aria-pressed={fullscreen.active}
+            title={fullscreen.active ? 'Exit fullscreen (F)' : 'Fullscreen (F)'}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden>
+              {fullscreen.active ? (
+                // corners pointing in
+                <path d="M8 3h2v7H3V8h5V3Zm6 0h2v5h5v2h-7V3ZM3 14h7v7H8v-5H3v-2Zm11 0h7v2h-5v5h-2v-7Z" />
+              ) : (
+                // corners pointing out
+                <path d="M3 3h7v2H5v5H3V3Zm11 0h7v7h-2V5h-5V3ZM3 14h2v5h5v2H3v-7Zm16 0h2v7h-7v-2h5v-5Z" />
+              )}
+            </svg>
+          </button>
+        )}
         <button type="button" className="btn btn--icon" onClick={onOpenSettings} aria-label="Open settings">
           <svg viewBox="0 0 24 24" aria-hidden>
             <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9 4-.1-1.3 2-1.6-2-3.4-2.4 1a8 8 0 0 0-2.2-1.3L15.9 3h-3.9l-.4 2.5a8 8 0 0 0-2.2 1.3l-2.4-1-2 3.4 2 1.6L7 12l.1 1.3-2 1.6 2 3.4 2.4-1a8 8 0 0 0 2.2 1.3l.4 2.5h3.9l.4-2.5a8 8 0 0 0 2.2-1.3l2.4 1 2-3.4-2-1.6Z" />

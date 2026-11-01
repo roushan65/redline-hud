@@ -8,7 +8,7 @@ A futuristic, themeable hardware-telemetry panel for [LibreHardwareMonitor](http
 - **Your channel in the middle.** Show your channel name, tagline and logo in the centre of the panel. It's made for streaming overlays and desk displays.
 - **Manufacturer logos** are detected from your hardware: AMD, Intel, NVIDIA, ASUS / ROG, MSI, Corsair, Seagate, Samsung and more.
 - **Five themes,** starting with Cyberpunk 2077 and including Arasaka, Netrunner, Militech and Tyger Claws. You can override any colour, and turn on CRT scanlines and glitch effects.
-- **Fits any screen.** The layout works from a 4K monitor down to a phone in portrait or landscape.
+- **Fits any screen.** The layout works from a 4K monitor down to a phone in portrait or landscape. The ⛶ button in the header (or the **F** key) makes the panel fullscreen for a desk display or a TV.
 - **Settings are saved to `config/config.json`** on disk, so the panel looks the same on every machine that opens it.
 
 <p align="center">

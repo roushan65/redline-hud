@@ -13,7 +13,7 @@ use std::time::Duration;
 use base64::Engine;
 use serde_json::Value;
 use tauri::http::{header, Response, StatusCode};
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager, State, WebviewWindow};
 
 const MAX_CONFIG_BYTES: usize = 256 * 1024;
 const MAX_LOGO_BYTES: usize = 5 * 1024 * 1024;
@@ -170,6 +170,17 @@ async fn lhm_fetch(lhm: State<'_, Lhm>, url: String) -> Result<Value, String> {
     serde_json::from_slice(&body).map_err(|e| format!("Not JSON: {e}"))
 }
 
+/// Native fullscreen for the header button (the webview's own Fullscreen API only fills the window).
+#[tauri::command]
+fn set_fullscreen(window: WebviewWindow, on: bool) -> Result<(), String> {
+    window.set_fullscreen(on).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn is_fullscreen(window: WebviewWindow) -> Result<bool, String> {
+    window.is_fullscreen().map_err(|e| e.to_string())
+}
+
 /// hud://localhost/logo and hud://localhost/vendors/amd.svg (http://hud.localhost/… on Windows),
 /// standing in for the web build's /api/logo and /api/vendors/amd.svg.
 fn serve_file(app: &AppHandle, path: &str) -> Response<Vec<u8>> {
@@ -199,7 +210,17 @@ fn main() {
     tauri::Builder::default()
         .manage(Lhm(client))
         .register_uri_scheme_protocol("hud", |ctx, req| serve_file(ctx.app_handle(), req.uri().path().trim_start_matches('/')))
-        .invoke_handler(tauri::generate_handler![config_location, config_get, config_put, logo_put, logo_delete, vendor_files, lhm_fetch])
+        .invoke_handler(tauri::generate_handler![
+            config_location,
+            config_get,
+            config_put,
+            logo_put,
+            logo_delete,
+            vendor_files,
+            lhm_fetch,
+            set_fullscreen,
+            is_fullscreen
+        ])
         .run(tauri::generate_context!())
         .expect("error while running REDLINE//HUD");
 }
