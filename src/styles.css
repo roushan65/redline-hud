@@ -391,6 +391,50 @@ small {
 .dash__center { grid-area: center; }
 .dash__table { grid-area: table; min-width: 0; }
 
+/* memory is the last card in the centre column: its row takes the height left beside the CPU / GPU cards
+   and the usage chart grows into it (the 1fr row collapses to 0 wherever the column is content-sized) */
+.dash__center { grid-template-rows: auto 1fr; }
+.dash__center > :only-child { grid-row: 1 / -1; }
+
+.dash__center > .panel--mem {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash__center > .panel--mem > .panel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* size containment: the trend adds no height of its own, it only takes what is left over */
+.mem__trend {
+  flex: 1;
+  position: relative;
+  container: memtrend / size;
+  /* swallow the body's flex gap so an empty trend (no spare height) adds nothing; the block re-adds it inside */
+  margin-top: -14px;
+}
+
+.mem__trend > .block {
+  position: absolute;
+  inset: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mem__trend .chart--fill { flex: 1; }
+
+/* short on room: drop the label row and keep just the plot; below ~28px leave the space empty */
+@container memtrend (max-height: 64px) {
+  .mem__trend .block__head,
+  .mem__trend .chart__ymax { display: none; }
+}
+
+@container memtrend (max-height: 28px) {
+  .mem__trend > .block { display: none; }
+}
+
 /* hero panels stretch to the taller of the two so CPU and GPU line up */
 .dash__cpu,
 .dash__gpu {
@@ -907,6 +951,7 @@ small {
   }
   .dash__center {
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: auto;
     align-items: stretch;
   }
   .dash__center > :only-child { grid-column: 1 / -1; }
@@ -917,7 +962,7 @@ small {
       'minor minor'
       'table table';
   }
-  .dash--no-gpu .dash__center { grid-template-columns: minmax(0, 1fr); }
+  .dash--no-gpu .dash__center { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
 }
 
 /* tablets portrait & phones: one column, still in priority order */
