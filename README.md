@@ -1,5 +1,19 @@
 # REDLINE//HUD
 
+[![Release builds](https://github.com/roushan65/redline-hud/actions/workflows/release.yml/badge.svg)](https://github.com/roushan65/redline-hud/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/roushan65/redline-hud?logo=github)](https://github.com/roushan65/redline-hud/releases/latest)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue)](LICENSE)
+
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev)
+[![Vitest](https://img.shields.io/badge/Vitest-5-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
+[![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
+[![Rust](https://img.shields.io/badge/Rust-stable-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![Simple Icons](https://img.shields.io/badge/Simple_Icons-16-111111?logo=simpleicons&logoColor=white)](https://simpleicons.org)
+[![LibreHardwareMonitor](https://img.shields.io/badge/data-LibreHardwareMonitor-0078D4)](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
+
 A futuristic, themeable hardware-telemetry panel for [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), built with React + Vite. Its default look is inspired by Cyberpunk 2077.
 
 ![REDLINE//HUD dashboard in the default Cyberpunk 2077 theme: CPU and GPU gauges, channel card, memory, network, mainboard and storage cards with manufacturer logos](docs/screenshots/dashboard.png)
